@@ -1,0 +1,170 @@
+class PenjualanModel {
+  final int id;
+  final String? nomor;
+  final String? uuid;
+  final String? pelanggan;
+  final String? email;
+  final String? alamatPenagihan;
+  final String? tglTransaksi;
+  final String? tglJatuhTempo;
+  final String? syaratPembayaran;
+  final String? noReferensi;
+  final String? tag;
+  final String? koordinat;
+  final String? memo;
+  final String status;
+  final num? diskonAkhir;
+  final num? taxPercentage;
+  final num? grandTotal;
+  final int? userId;
+  final int? approverId;
+  final int? gudangId;
+  final String? tipeHarga;
+  final Map<String, dynamic>? user;
+  final Map<String, dynamic>? gudang;
+  final Map<String, dynamic>? approver;
+  final List<PenjualanItemModel>? items;
+  final List<String>? lampiranPaths;
+
+  PenjualanModel({
+    required this.id,
+    this.nomor,
+    this.uuid,
+    this.pelanggan,
+    this.email,
+    this.alamatPenagihan,
+    this.tglTransaksi,
+    this.tglJatuhTempo,
+    this.syaratPembayaran,
+    this.noReferensi,
+    this.tag,
+    this.koordinat,
+    this.memo,
+    required this.status,
+    this.diskonAkhir,
+    this.taxPercentage,
+    this.grandTotal,
+    this.userId,
+    this.approverId,
+    this.gudangId,
+    this.tipeHarga,
+    this.user,
+    this.gudang,
+    this.approver,
+    this.items,
+    this.lampiranPaths,
+  });
+
+  factory PenjualanModel.fromJson(Map<String, dynamic> json) {
+    List<PenjualanItemModel>? items;
+    if (json['items'] != null) {
+      items = (json['items'] as List)
+          .map((e) => PenjualanItemModel.fromJson(e))
+          .toList();
+    }
+
+    return PenjualanModel(
+      id: json['id'],
+      nomor: json['nomor'],
+      uuid: json['uuid'],
+      pelanggan: json['pelanggan'],
+      email: json['email'],
+      alamatPenagihan: json['alamat_penagihan'],
+      tglTransaksi: json['tgl_transaksi'],
+      tglJatuhTempo: json['tgl_jatuh_tempo'],
+      syaratPembayaran: json['syarat_pembayaran'],
+      noReferensi: json['no_referensi'],
+      tag: json['tag'],
+      koordinat: json['koordinat'],
+      memo: json['memo'],
+      status: json['status'] ?? 'Pending',
+      diskonAkhir: _parseNum(json['diskon_akhir']),
+      taxPercentage: _parseNum(json['tax_percentage']),
+      grandTotal: _parseNum(json['grand_total']),
+      userId: json['user_id'],
+      approverId: json['approver_id'],
+      gudangId: json['gudang_id'],
+      tipeHarga: json['tipe_harga'],
+      user: json['user'],
+      gudang: json['gudang'],
+      approver: json['approver'],
+      items: items,
+      lampiranPaths: json['lampiran_paths'] != null
+          ? List<String>.from(json['lampiran_paths'])
+          : null,
+    );
+  }
+
+  static num? _parseNum(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  String get userName => user?['name'] ?? '-';
+  String get gudangName => gudang?['nama_gudang'] ?? '-';
+}
+
+class PenjualanItemModel {
+  final int id;
+  final int penjualanId;
+  final int produkId;
+  final String namaProduk;
+  final num kuantitas;
+  final String? satuan;
+  final num hargaSatuan;
+  final num diskon;
+  final num total;
+  final Map<String, dynamic>? produk;
+
+  PenjualanItemModel({
+    required this.id,
+    required this.penjualanId,
+    required this.produkId,
+    required this.namaProduk,
+    required this.kuantitas,
+    this.satuan,
+    required this.hargaSatuan,
+    required this.diskon,
+    required this.total,
+    this.produk,
+  });
+
+  factory PenjualanItemModel.fromJson(Map<String, dynamic> json) {
+    final qty = _parseNum(json['kuantitas']);
+    final harga = _parseNum(json['harga_satuan']);
+    final disk = _parseNum(json['diskon']);
+    num parsedTotal = _parseNum(json['total']) != 0
+        ? _parseNum(json['total'])
+        : (_parseNum(json['sub_total']) != 0
+            ? _parseNum(json['sub_total'])
+            : (_parseNum(json['subtotal']) != 0
+                ? _parseNum(json['subtotal'])
+                : 0));
+    // Calculate if still 0
+    if (parsedTotal == 0 && harga > 0 && qty > 0) {
+      parsedTotal = qty * harga * (1 - disk / 100);
+    }
+
+    return PenjualanItemModel(
+      id: json['id'],
+      penjualanId: json['penjualan_id'],
+      produkId: json['produk_id'],
+      namaProduk: json['nama_produk'] ?? json['produk']?['nama_produk'] ?? '',
+      kuantitas: qty,
+      satuan: json['satuan'] ?? json['unit'],
+      hargaSatuan: harga,
+      diskon: disk,
+      total: parsedTotal,
+      produk: json['produk'],
+    );
+  }
+
+  static num _parseNum(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value) ?? 0;
+    return 0;
+  }
+}
