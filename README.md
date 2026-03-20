@@ -1,5 +1,9 @@
 # Hibiscus Efsya Sales App
 
+<p align="center">
+	<img src="assets/images/hibiscusefsya1-removebg-preview.png" alt="Hibiscus Efsya" width="260" />
+</p>
+
 ## Tech Stack
 
 - Framework: Flutter (Dart)
