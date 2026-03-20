@@ -1,0 +1,700 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../models/pembelian_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/pembelian_provider.dart';
+import '../../providers/produk_provider.dart';
+import '../../providers/gudang_provider.dart';
+import '../../models/produk_model.dart';
+import '../../utils/app_theme.dart';
+import '../../utils/formatters.dart';
+import '../../widgets/date_picker_field.dart';
+import '../../widgets/koordinat_lokasi_field.dart';
+import '../../widgets/lampiran_picker_widget.dart';
+import '../../widgets/searchable_dropdown_form_field.dart';
+import '../scanner/barcode_scanner_screen.dart';
+
+class PembelianEditScreen extends StatefulWidget {
+  final PembelianModel data;
+  const PembelianEditScreen({super.key, required this.data});
+
+  @override
+  State<PembelianEditScreen> createState() => _PembelianEditScreenState();
+}
+
+class _PembelianEditScreenState extends State<PembelianEditScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _memoController;
+  late final TextEditingController _stafController;
+  late final TextEditingController _emailStafController;
+  late final TextEditingController _tahunAnggaranController;
+  late final TextEditingController _koordinatController;
+  late final TextEditingController _tagController;
+
+  late DateTime _tglTransaksi;
+  late String _syaratPembayaran;
+  late String _urgensi;
+  int? _gudangId;
+  bool _isGudangLocked = false;
+  bool _isLoadingProdukGudang = false;
+  final Set<int> _allowedProdukIds = {};
+  late double _taxPercentage;
+  late double _diskonAkhir;
+  final List<_ItemRow> _items = [];
+  List<PlatformFile> _lampiran = [];
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.data;
+    _memoController = TextEditingController(text: d.memo ?? '');
+    _stafController = TextEditingController(text: d.stafPenyetuju ?? '');
+    _emailStafController = TextEditingController(text: d.emailPenyetuju ?? '');
+    _tahunAnggaranController =
+        TextEditingController(text: d.tahunAnggaran ?? '');
+    _koordinatController = TextEditingController(text: d.koordinat ?? '');
+    _tagController = TextEditingController(text: d.tag ?? '');
+    _tglTransaksi = d.tglTransaksi != null
+        ? DateTime.tryParse(d.tglTransaksi!) ?? DateTime.now()
+        : DateTime.now();
+    _syaratPembayaran = d.syaratPembayaran ?? 'Cash';
+    _urgensi = d.urgensi ?? 'Sedang';
+    _gudangId = d.gudangId;
+    _taxPercentage = (d.taxPercentage ?? 0).toDouble();
+    _diskonAkhir = (d.diskonAkhir ?? 0).toDouble();
+
+    if (d.items != null) {
+      for (final item in d.items!) {
+        _items.add(_ItemRow()
+          ..produkId = item.produkId
+          ..qty = (item.kuantitas ?? 0).toDouble()
+          ..harga = (item.hargaSatuan ?? 0).toDouble()
+          ..diskon = (item.diskon ?? 0).toDouble());
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
+      Provider.of<GudangProvider>(context, listen: false).fetchGudang();
+      _applyUserGudangRule();
+    });
+  }
+
+  @override
+  void dispose() {
+    _memoController.dispose();
+    _stafController.dispose();
+    _emailStafController.dispose();
+    _tahunAnggaranController.dispose();
+    _koordinatController.dispose();
+    _tagController.dispose();
+    super.dispose();
+  }
+
+  void _addItem() => setState(() => _items.add(_ItemRow()));
+  void _removeItem(int i) => setState(() => _items.removeAt(i));
+
+  Future<void> _applyUserGudangRule() async {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    final fixedGudangId = user?.currentGudangId ?? user?.gudangId;
+    final isSuperAdmin = user?.isSuperAdmin == true;
+
+    if (!isSuperAdmin && fixedGudangId != null) {
+      setState(() {
+        _gudangId = fixedGudangId;
+        _isGudangLocked = true;
+      });
+      await _loadProdukGudang(fixedGudangId);
+      return;
+    }
+
+    setState(() => _isGudangLocked = false);
+    if (_gudangId != null) {
+      await _loadProdukGudang(_gudangId);
+    }
+  }
+
+  Future<void> _loadProdukGudang(int? gudangId) async {
+    if (gudangId == null) {
+      setState(() => _allowedProdukIds.clear());
+      return;
+    }
+    setState(() => _isLoadingProdukGudang = true);
+    try {
+      final stokList = await Provider.of<GudangProvider>(context, listen: false)
+          .fetchStok(gudangId: gudangId);
+      if (!mounted) return;
+      setState(() {
+        _allowedProdukIds
+          ..clear()
+          ..addAll(stokList.map((s) => s.produkId));
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _allowedProdukIds.clear());
+    } finally {
+      if (mounted) setState(() => _isLoadingProdukGudang = false);
+    }
+  }
+
+  Future<void> _scanBarcodeProduk(
+      int rowIndex, List<ProdukModel> produks) async {
+    if (_gudangId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih gudang terlebih dahulu sebelum scan produk.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          scanType: 'produk',
+          dataList: produks
+              .map((p) => {
+                    'id': p.id,
+                    'item_code': p.itemCode,
+                    'nama_produk': p.namaProduk,
+                  })
+              .toList(),
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final scannedId = result['id'] is int
+        ? result['id'] as int
+        : int.tryParse('${result['id']}');
+    if (scannedId == null) return;
+    final matched = produks.cast<ProdukModel?>().firstWhere(
+          (p) => p?.id == scannedId,
+          orElse: () => null,
+        );
+    if (matched == null) return;
+    setState(() {
+      _items[rowIndex].produk = matched;
+      _items[rowIndex].produkId = matched.id;
+      _items[rowIndex].harga = (matched.harga ?? 0).toDouble();
+    });
+  }
+
+  String _produkSearchLabel(ProdukModel p) {
+    final code = (p.itemCode ?? '').trim();
+    return code.isNotEmpty ? '$code - ${p.namaProduk}' : p.namaProduk;
+  }
+
+  DateTime get _jatuhTempo {
+    int days = 0;
+    switch (_syaratPembayaran) {
+      case 'Net 7':
+        days = 7;
+        break;
+      case 'Net 14':
+        days = 14;
+        break;
+      case 'Net 30':
+        days = 30;
+        break;
+      case 'Net 60':
+        days = 60;
+        break;
+    }
+    return _tglTransaksi.add(Duration(days: days));
+  }
+
+  double get _subTotal {
+    double total = 0;
+    for (final item in _items) {
+      if (item.qty > 0) {
+        total += item.qty * item.harga * (1 - item.diskon / 100);
+      }
+    }
+    return total;
+  }
+
+  double get _jumlahPajak {
+    double afterDiskon = _subTotal - _diskonAkhir;
+    if (afterDiskon < 0) afterDiskon = 0;
+    return afterDiskon * _taxPercentage / 100;
+  }
+
+  double get _grandTotal {
+    double afterDiskon = _subTotal - _diskonAkhir;
+    if (afterDiskon < 0) afterDiskon = 0;
+    return afterDiskon + _jumlahPajak;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Tambahkan minimal 1 item.'),
+          backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await Provider.of<PembelianProvider>(context, listen: false)
+          .updatePembelian(widget.data.id, {
+        'tgl_transaksi': _tglTransaksi.toIso8601String().split('T')[0],
+        'syarat_pembayaran': _syaratPembayaran,
+        'urgensi': _urgensi,
+        'gudang_id': _gudangId,
+        'tahun_anggaran': _tahunAnggaranController.text.isNotEmpty
+            ? _tahunAnggaranController.text
+            : null,
+        'staf_penyetuju':
+            _stafController.text.isNotEmpty ? _stafController.text : null,
+        'email_penyetuju': _emailStafController.text.isNotEmpty
+            ? _emailStafController.text
+            : null,
+        'koordinat': _koordinatController.text.isNotEmpty
+            ? _koordinatController.text
+            : null,
+        'tag': _tagController.text.isNotEmpty ? _tagController.text : null,
+        'tax_percentage': _taxPercentage,
+        'diskon_akhir': _diskonAkhir,
+        'memo': _memoController.text,
+        'items': _items
+            .where((i) => i.produkId != null || i.produk != null)
+            .map((i) => {
+                  'produk_id': i.produk?.id ?? i.produkId,
+                  'kuantitas': i.qty,
+                  'harga_satuan': i.harga,
+                  'diskon': i.diskon,
+                  'deskripsi': i.deskripsiController.text.isNotEmpty
+                      ? i.deskripsiController.text
+                      : null,
+                  'unit': i.unitController.text.isNotEmpty
+                      ? i.unitController.text
+                      : null,
+                })
+            .toList(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Pembelian berhasil diperbarui!'),
+            backgroundColor: Colors.green));
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red));
+      }
+    }
+    if (mounted) setState(() => _isSubmitting = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Pembelian'),
+        flexibleSpace: Container(
+            decoration:
+                BoxDecoration(gradient: AppTheme.mainGradient(context))),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            DatePickerField(
+              label: 'Tgl Transaksi *',
+              selectedDate: _tglTransaksi,
+              onDateSelected: (d) => setState(() => _tglTransaksi = d),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: [
+                      'Cash',
+                      'Net 7',
+                      'Net 14',
+                      'Net 30',
+                      'Net 60'
+                    ].contains(_syaratPembayaran)
+                        ? _syaratPembayaran
+                        : 'Cash',
+                    isExpanded: true,
+                    decoration:
+                        const InputDecoration(labelText: 'Syarat Pembayaran *'),
+                    items: ['Cash', 'Net 7', 'Net 14', 'Net 30', 'Net 60']
+                        .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _syaratPembayaran = v!),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DatePickerField(
+                    label: 'Jatuh Tempo (Auto)',
+                    selectedDate: _jatuhTempo,
+                    onDateSelected: (_) {},
+                    readOnly: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue:
+                  ['Segera', 'Sedang', 'Tidak Mendesak'].contains(_urgensi)
+                      ? _urgensi
+                      : 'Sedang',
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Urgensi *'),
+              items: ['Segera', 'Sedang', 'Tidak Mendesak']
+                  .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                  .toList(),
+              onChanged: (v) => setState(() => _urgensi = v!),
+            ),
+            const SizedBox(height: 12),
+            Consumer<GudangProvider>(
+              builder: (ctx, gudangProvider, _) {
+                return DropdownButtonFormField<int>(
+                  isExpanded: true,
+                  initialValue: _gudangId,
+                  decoration: const InputDecoration(labelText: 'Gudang *'),
+                  items: gudangProvider.items
+                      .map((g) => DropdownMenuItem(
+                          value: g.id, child: Text(g.namaGudang)))
+                      .toList(),
+                  onChanged: _isGudangLocked
+                      ? null
+                      : (v) {
+                          setState(() => _gudangId = v);
+                          _loadProdukGudang(v);
+                        },
+                  validator: (v) => v == null ? 'Pilih gudang' : null,
+                );
+              },
+            ),
+            if (_isGudangLocked)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Gudang otomatis sesuai role akun Anda.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondaryColor(context),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+            TextFormField(
+                controller: _tahunAnggaranController,
+                decoration: const InputDecoration(
+                    labelText: 'Tahun Anggaran (opsional)'),
+                keyboardType: TextInputType.number),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _tagController,
+              decoration: const InputDecoration(
+                labelText: 'Tag (Pembuat)',
+                prefixIcon: Icon(Icons.label_outline, size: 20),
+              ),
+            ),
+            const SizedBox(height: 12),
+            KoordinatLokasiField(controller: _koordinatController),
+            const SizedBox(height: 20),
+            Consumer<GudangProvider>(
+              builder: (ctx, gudangProvider, _) {
+                if (_gudangId == null) return const SizedBox.shrink();
+                final selectedGudang =
+                    gudangProvider.items.cast<dynamic>().firstWhere(
+                          (g) => g.id == _gudangId,
+                          orElse: () => null,
+                        );
+                final gudangName =
+                    selectedGudang?.namaGudang ?? 'Gudang #$_gudangId';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.isDark(context)
+                        ? AppTheme.primaryColor.withAlpha(26)
+                        : AppTheme.primaryLight,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                        color: AppTheme.primaryColor.withValues(
+                            alpha: AppTheme.isDark(context) ? 0.45 : 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.filter_alt,
+                          size: 16,
+                          color: AppTheme.isDark(context)
+                              ? AppTheme.primaryLight
+                              : AppTheme.primaryColor),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Filtered by Gudang: $gudangName',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.isDark(context)
+                                ? AppTheme.primaryLight
+                                : AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                    child: Text('Item Produk',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis)),
+                TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tambah'),
+                    onPressed: _addItem),
+              ],
+            ),
+            Consumer<ProdukProvider>(
+              builder: (ctx, produkProvider, _) {
+                final produks = _gudangId == null
+                    ? <ProdukModel>[]
+                    : (_allowedProdukIds.isEmpty
+                        ? produkProvider.items
+                        : produkProvider.items
+                            .where((p) => _allowedProdukIds.contains(p.id))
+                            .toList());
+                return Column(
+                  children: List.generate(_items.length, (i) {
+                    final item = _items[i];
+                    final matchedProduk = item.produk ??
+                        (item.produkId != null
+                            ? produks.cast<ProdukModel?>().firstWhere(
+                                (p) => p!.id == item.produkId,
+                                orElse: () => null)
+                            : null);
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(children: [
+                          Row(children: [
+                            Expanded(
+                              child: SearchableDropdownFormField<ProdukModel>(
+                                value: matchedProduk,
+                                labelText: 'Produk',
+                                hintText: _gudangId == null
+                                    ? 'Pilih gudang dulu'
+                                    : (_isLoadingProdukGudang
+                                        ? 'Memuat produk...'
+                                        : 'Ketik nama/kode produk...'),
+                                enabled: _gudangId != null &&
+                                    !_isLoadingProdukGudang,
+                                items: produks,
+                                itemAsString: _produkSearchLabel,
+                                onChanged: (v) => setState(() {
+                                  item.produk = v;
+                                  item.produkId = v?.id;
+                                  item.harga = (v?.harga ?? 0).toDouble();
+                                }),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Scan Barcode EAN-13',
+                              icon: const Icon(
+                                Icons.qr_code_scanner,
+                                color: AppTheme.primaryColor,
+                              ),
+                              onPressed: _isLoadingProdukGudang
+                                  ? null
+                                  : () => _scanBarcodeProduk(i, produks),
+                            ),
+                            IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _removeItem(i)),
+                          ]),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: item.deskripsiController,
+                            decoration: const InputDecoration(
+                                labelText: 'Deskripsi', isDense: true),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                    initialValue: item.qty.toString(),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Qty', isDense: true),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (v) => setState(() =>
+                                        item.qty = double.tryParse(v) ?? 0))),
+                            const SizedBox(width: 8),
+                            Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                  controller: item.unitController,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Unit', isDense: true),
+                                )),
+                          ]),
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                    initialValue: item.harga.toString(),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Harga', isDense: true),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (v) => setState(() =>
+                                        item.harga = double.tryParse(v) ?? 0))),
+                            const SizedBox(width: 8),
+                            Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                    initialValue: item.diskon.toString(),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Disc%', isDense: true),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (v) => setState(() => item
+                                        .diskon = double.tryParse(v) ?? 0))),
+                          ]),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'Total: ${Formatters.currency(item.qty * item.harga * (1 - item.diskon / 100))}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+                controller: _memoController,
+                decoration: const InputDecoration(labelText: 'Memo (opsional)'),
+                maxLines: 3),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(children: [
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Subtotal'),
+                        Flexible(
+                            child: Text(Formatters.currency(_subTotal),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end)),
+                      ]),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                      initialValue: _diskonAkhir.toString(),
+                      decoration: const InputDecoration(
+                          labelText: 'Diskon Akhir (Rp)', isDense: true),
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) => setState(
+                          () => _diskonAkhir = double.tryParse(v) ?? 0)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                      initialValue: _taxPercentage.toString(),
+                      decoration: const InputDecoration(
+                          labelText: 'Pajak (%)', isDense: true),
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) => setState(
+                          () => _taxPercentage = double.tryParse(v) ?? 0)),
+                  const SizedBox(height: 8),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Jumlah Pajak'),
+                        Flexible(
+                            child: Text(Formatters.currency(_jumlahPajak),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end)),
+                      ]),
+                  const Divider(height: 24),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Grand Total',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        Flexible(
+                          child: Text(Formatters.currency(_grandTotal),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: AppTheme.primaryColor),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end),
+                        ),
+                      ]),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 16),
+            LampiranPickerWidget(
+              files: _lampiran,
+              onFilesChanged: (files) => setState(() => _lampiran = files),
+              fileNamePrefix: (widget.data.nomor?.trim().isNotEmpty == true)
+                  ? widget.data.nomor!.trim()
+                  : 'PR',
+              existingFileCount: widget.data.lampiranPaths?.length ?? 0,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('Simpan Perubahan',
+                        style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemRow {
+  ProdukModel? produk;
+  int? produkId;
+  double qty = 1;
+  double harga = 0;
+  double diskon = 0;
+  final deskripsiController = TextEditingController();
+  final unitController = TextEditingController();
+}
