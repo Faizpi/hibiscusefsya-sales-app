@@ -258,9 +258,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = AppTheme.isDark(context);
-    final selectedColor =
-        isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
-    final unselectedColor = AppTheme.textTertiaryColor(context);
+    final selectedColor = isDark ? Colors.white : const Color(0xFF101828);
+    final unselectedColor =
+      isDark ? Colors.white.withAlpha(165) : const Color(0xFF6B7280);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
@@ -290,14 +290,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     sigmaY: AppTheme.glassBlur(context, base: 24),
                   ),
                   child: Container(
-                    height: 56,
+                    height: 58,
                     decoration: BoxDecoration(
                       color: AppTheme.glassColor(context)
-                          .withAlpha(isDark ? 156 : 188),
+                          .withAlpha(isDark ? 142 : 176),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: AppTheme.glassBorderColor(context)
-                            .withAlpha(isDark ? 120 : 190),
+                            .withAlpha(isDark ? 130 : 200),
                         width: 1.2,
                       ),
                       boxShadow: [
@@ -308,64 +308,98 @@ class _HomeScreenState extends State<HomeScreen> {
                           spreadRadius: 0,
                         ),
                         BoxShadow(
-                          color:
-                              AppTheme.primaryColor.withAlpha(isDark ? 18 : 14),
-                          blurRadius: 30,
-                          offset: const Offset(0, 2),
+                          color: Colors.white.withAlpha(isDark ? 7 : 24),
+                          blurRadius: 16,
+                          offset: const Offset(0, -1),
                         ),
                       ],
                     ),
                     child: Stack(
                       children: [
-                        // Soft top sheen for liquid-glass finish.
+                        // Subtle top highlight for clear liquid-glass look.
                         Positioned(
                           left: 8,
                           right: 8,
                           top: 4,
                           child: IgnorePointer(
                             child: Container(
-                              height: 12,
+                              height: 10,
                               decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(isDark ? 18 : 54),
+                                color: Colors.white.withAlpha(isDark ? 16 : 46),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                           ),
                         ),
-                        // Moving active capsule to create liquid feel.
+
+                        // Inner edge to mimic refracted glass rim.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Padding(
+                              padding: const EdgeInsets.all(1.2),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18.8),
+                                  border: Border.all(
+                                    color:
+                                        Colors.white.withAlpha(isDark ? 24 : 72),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Moving orb (not full capsule) like iOS liquid tab focus.
                         AnimatedAlign(
-                          duration: const Duration(milliseconds: 320),
-                          curve: Curves.easeOutCubic,
+                          duration: const Duration(milliseconds: 360),
+                          curve: Curves.easeOutQuart,
                           alignment: Alignment(-1 + _bottomNavIndex.toDouble(), 0),
                           child: FractionallySizedBox(
                             widthFactor: 1 / 3,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 6),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color:
-                                      Colors.white.withAlpha(isDark ? 22 : 68),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: Colors.white
-                                        .withAlpha(isDark ? 48 : 138),
-                                    width: 1,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Colors.white.withAlpha(isDark ? 22 : 90),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
                                       color: Colors.white
-                                          .withAlpha(isDark ? 8 : 34),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, -1),
+                                          .withAlpha(isDark ? 54 : 170),
+                                      width: 1,
                                     ),
-                                    BoxShadow(
-                                      color: Colors.black
-                                          .withAlpha(isDark ? 22 : 8),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.white
+                                            .withAlpha(isDark ? 10 : 38),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, -1),
+                                      ),
+                                      BoxShadow(
+                                        color: Colors.black
+                                            .withAlpha(isDark ? 24 : 10),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Align(
+                                    alignment: const Alignment(-0.25, -0.3),
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withAlpha(isDark ? 24 : 160),
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -423,8 +457,8 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              duration: const Duration(milliseconds: 240),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
                     ? Colors.white.withAlpha(isDark ? 0 : 6)
@@ -434,15 +468,15 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(
                 isSelected ? activeIcon : inactiveIcon,
                 color: isSelected ? selectedColor : unselectedColor,
-                size: 20,
+                size: 18.5,
               ),
             ),
-            const SizedBox(height: 1),
+            const SizedBox(height: 2),
             Text(
               label,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 8.8,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? selectedColor : unselectedColor,
                 height: 1.0,
