@@ -54,8 +54,45 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+enum _HomeDestination {
+  beranda,
+  aktivitas,
+  profil,
+}
+
 class _HomeScreenState extends State<HomeScreen> {
-  int _bottomNavIndex = 0;
+  static const List<_HomeDestination> _navDestinations = [
+    _HomeDestination.beranda,
+    _HomeDestination.aktivitas,
+    _HomeDestination.profil,
+  ];
+
+  _HomeDestination _currentDestination = _HomeDestination.beranda;
+
+  int get _selectedNavIndex {
+    final index = _navDestinations.indexOf(_currentDestination);
+    return index < 0 ? 0 : index;
+  }
+
+  int get _tabIndex {
+    switch (_currentDestination) {
+      case _HomeDestination.beranda:
+        return 0;
+      case _HomeDestination.aktivitas:
+        return 1;
+      case _HomeDestination.profil:
+        return 2;
+    }
+  }
+
+  bool _isBottomNavVisible() {
+    return _navDestinations.contains(_currentDestination);
+  }
+
+  void _selectDestination(_HomeDestination destination) {
+    if (_currentDestination == destination) return;
+    setState(() => _currentDestination = destination);
+  }
 
   bool _canShowGudangSwitch(dynamic user) {
     return user?.isAdmin == true || user?.isSpectator == true;
@@ -260,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = AppTheme.isDark(context);
     final selectedColor = isDark ? Colors.white : const Color(0xFF101828);
     final unselectedColor =
-      isDark ? Colors.white.withAlpha(165) : const Color(0xFF6B7280);
+        isDark ? Colors.white.withAlpha(165) : const Color(0xFF6B7280);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
@@ -270,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Main content
             IndexedStack(
-              index: _bottomNavIndex,
+              index: _tabIndex,
               children: [
                 _buildBerandaTab(),
                 const DashboardScreen(),
@@ -278,102 +315,89 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             // Floating glass navbar overlaid on top of content
-            Positioned(
-              left: 28,
-              right: 28,
-              bottom: MediaQuery.of(context).padding.bottom + 10,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppTheme.glassBlur(context, base: 28),
-                    sigmaY: AppTheme.glassBlur(context, base: 28),
-                  ),
-                  child: Container(
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: AppTheme.glassColor(context)
-                          .withAlpha(isDark ? 124 : 154),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: AppTheme.glassBorderColor(context)
-                            .withAlpha(isDark ? 100 : 150),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 42 : 14),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                          spreadRadius: 0,
-                        ),
-                        BoxShadow(
-                          color: Colors.white.withAlpha(isDark ? 4 : 20),
-                          blurRadius: 14,
-                          offset: const Offset(0, -1),
-                        ),
-                      ],
+            if (_isBottomNavVisible())
+              Positioned(
+                left: 28,
+                right: 28,
+                bottom: MediaQuery.of(context).padding.bottom + 10,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: AppTheme.glassBlur(context, base: 28),
+                      sigmaY: AppTheme.glassBlur(context, base: 28),
                     ),
-                    child: Stack(
-                      children: [
-                        // Subtle top sheen.
-                        Positioned(
-                          left: 14,
-                          right: 14,
-                          top: 5,
-                          child: IgnorePointer(
-                            child: Container(
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(isDark ? 14 : 34),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
+                    child: Container(
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: AppTheme.glassColor(context)
+                            .withAlpha(isDark ? 124 : 154),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: AppTheme.glassBorderColor(context)
+                              .withAlpha(isDark ? 100 : 150),
+                          width: 1,
                         ),
-
-                        // Moving orb (not full capsule) like iOS liquid tab focus.
-                        AnimatedAlign(
-                          duration: const Duration(milliseconds: 360),
-                          curve: Curves.easeOutQuart,
-                          alignment: Alignment(-1 + _bottomNavIndex.toDouble(), 0),
-                          child: FractionallySizedBox(
-                            widthFactor: 1 / 3,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Colors.white.withAlpha(isDark ? 18 : 70),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.white
-                                            .withAlpha(isDark ? 8 : 30),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, -1),
-                                      ),
-                                      BoxShadow(
-                                        color: Colors.black
-                                            .withAlpha(isDark ? 20 : 8),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Align(
-                                    alignment: const Alignment(-0.25, -0.3),
-                                    child: Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white
-                                            .withAlpha(isDark ? 22 : 120),
-                                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(isDark ? 42 : 14),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withAlpha(isDark ? 4 : 20),
+                            blurRadius: 14,
+                            offset: const Offset(0, -1),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Moving orb (not full capsule) like iOS liquid tab focus.
+                          AnimatedAlign(
+                            duration: const Duration(milliseconds: 360),
+                            curve: Curves.easeOutQuart,
+                            alignment:
+                                Alignment(-1 + _selectedNavIndex.toDouble(), 0),
+                            child: FractionallySizedBox(
+                              widthFactor: 1 / 3,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white
+                                          .withAlpha(isDark ? 18 : 70),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white
+                                              .withAlpha(isDark ? 8 : 30),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, -1),
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.black
+                                              .withAlpha(isDark ? 20 : 8),
+                                          blurRadius: 14,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Align(
+                                      alignment: const Alignment(-0.25, -0.3),
+                                      child: Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withAlpha(isDark ? 22 : 120),
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -381,54 +405,59 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                        ),
-                        Row(
-                          children: [
-                            _buildNavItem(
-                                0,
+                          Row(
+                            children: [
+                              _buildNavItem(
+                                _HomeDestination.beranda,
                                 Icons.home_rounded,
                                 Icons.home_outlined,
                                 'Beranda',
                                 selectedColor,
                                 unselectedColor,
-                                isDark),
-                            _buildNavItem(
-                                1,
+                              ),
+                              _buildNavItem(
+                                _HomeDestination.aktivitas,
                                 Icons.bar_chart_rounded,
                                 Icons.bar_chart_outlined,
                                 'Aktivitas',
                                 selectedColor,
                                 unselectedColor,
-                                isDark),
-                            _buildNavItem(
-                                2,
+                              ),
+                              _buildNavItem(
+                                _HomeDestination.profil,
                                 Icons.person_rounded,
                                 Icons.person_outlined,
                                 'Profil',
                                 selectedColor,
                                 unselectedColor,
-                                isDark),
-                          ],
-                        ),
-                      ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon,
-      String label, Color selectedColor, Color unselectedColor, bool isDark) {
-    final isSelected = _bottomNavIndex == index;
+  Widget _buildNavItem(
+    _HomeDestination destination,
+    IconData activeIcon,
+    IconData inactiveIcon,
+    String label,
+    Color selectedColor,
+    Color unselectedColor,
+  ) {
+    final isSelected = _currentDestination == destination;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _bottomNavIndex = index),
+        onTap: () => _selectDestination(destination),
         behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -603,7 +632,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 8),
                         // Profile avatar
                         GestureDetector(
-                          onTap: () => setState(() => _bottomNavIndex = 2),
+                          onTap: () =>
+                              _selectDestination(_HomeDestination.profil),
                           child: Container(
                             width: 42,
                             height: 42,

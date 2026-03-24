@@ -104,8 +104,8 @@ class GlassContainer extends StatelessWidget {
     // Glass tint color
     final glassColor = overrideColor ??
         (isDark
-        ? const Color(0xFF1A2538).withAlpha(_useFaux ? 184 : 162)
-        : const Color(0xFFF8FAFF).withAlpha(_useFaux ? 226 : 206));
+            ? const Color(0xFF1A2538).withAlpha(_useFaux ? 184 : 162)
+            : const Color(0xFFF8FAFF).withAlpha(_useFaux ? 226 : 206));
 
     // Border — slightly more visible in dark mode for glass definition
     final glassBorder = overrideBorder ??
@@ -145,15 +145,11 @@ class GlassContainer extends StatelessWidget {
 
     // Gradient overlay for glass depth
     final baseSurface = AppTheme.softBluePinkSurface(context);
-    final overlayAlpha = isDark
-        ? (_useFaux ? 38 : 52)
-        : (_useFaux ? 198 : 226);
+    final overlayAlpha = isDark ? (_useFaux ? 38 : 52) : (_useFaux ? 198 : 226);
     final glassGradient = LinearGradient(
       begin: baseSurface.begin,
       end: baseSurface.end,
-      colors: baseSurface.colors
-          .map((c) => c.withAlpha(overlayAlpha))
-          .toList(),
+      colors: baseSurface.colors.map((c) => c.withAlpha(overlayAlpha)).toList(),
       stops: baseSurface.stops,
     );
 

@@ -208,30 +208,30 @@ class _ProdukDetailScreenState extends State<ProdukDetailScreen> {
                                 fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
                         ...(_data!['stok'] as List? ?? []).map((s) {
-                          final stokPenjualan =
-                            _stockComponent(s, 'stok_penjualan', 'stokPenjualan');
+                          final stokPenjualan = _stockComponent(
+                              s, 'stok_penjualan', 'stokPenjualan');
                           final stokGratis =
-                            _stockComponent(s, 'stok_gratis', 'stokGratis');
+                              _stockComponent(s, 'stok_gratis', 'stokGratis');
                           final stokSample =
-                            _stockComponent(s, 'stok_sample', 'stokSample');
+                              _stockComponent(s, 'stok_sample', 'stokSample');
                           final totalStok = _resolveTotalStok(s);
                           final gudangName = s['gudang']?['nama_gudang'] ??
-                            s['gudang']?['nama'] ??
-                            'Gudang #${s['gudang_id']}';
+                              s['gudang']?['nama'] ??
+                              'Gudang #${s['gudang_id']}';
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
-                            title: Text(gudangName),
-                            trailing: Text('$totalStok',
+                              title: Text(gudangName),
+                              trailing: Text('$totalStok',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16)),
                               subtitle: Wrap(spacing: 8, children: [
-                            Text('Jual: $stokPenjualan',
+                                Text('Jual: $stokPenjualan',
                                     style: const TextStyle(fontSize: 12)),
-                            Text('Gratis: $stokGratis',
+                                Text('Gratis: $stokGratis',
                                     style: const TextStyle(fontSize: 12)),
-                            Text('Sample: $stokSample',
+                                Text('Sample: $stokSample',
                                     style: const TextStyle(fontSize: 12)),
                               ]),
                             ),

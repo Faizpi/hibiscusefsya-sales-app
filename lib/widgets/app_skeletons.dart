@@ -27,7 +27,10 @@ class AppListSkeleton extends StatelessWidget {
         itemBuilder: (_, __) => Container(
           height: 86,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.glassInputFill(context),
+            border: Border.all(
+              color: AppTheme.glassBorderColor(context).withAlpha(120),
+            ),
             borderRadius: BorderRadius.circular(14),
           ),
         ),
@@ -51,7 +54,10 @@ class AppDetailSkeleton extends StatelessWidget {
     Widget block(double h) => Container(
           height: h,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.glassInputFill(context),
+            border: Border.all(
+              color: AppTheme.glassBorderColor(context).withAlpha(120),
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -91,7 +97,10 @@ class AppFormSkeleton extends StatelessWidget {
     Widget field() => Container(
           height: 52,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.glassInputFill(context),
+            border: Border.all(
+              color: AppTheme.glassBorderColor(context).withAlpha(120),
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
         );
@@ -116,7 +125,10 @@ class AppFormSkeleton extends StatelessWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.glassInputFill(context),
+              border: Border.all(
+                color: AppTheme.glassBorderColor(context).withAlpha(120),
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
           ),

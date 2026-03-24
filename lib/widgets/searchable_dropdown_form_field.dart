@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_theme.dart';
 
 class SearchableDropdownFormField<T> extends FormField<T> {
   SearchableDropdownFormField({
@@ -27,21 +28,66 @@ class SearchableDropdownFormField<T> extends FormField<T> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DropdownMenu<T>(
-                  enabled: enabled,
-                  width: double.infinity,
-                  menuHeight: 320,
-                  enableSearch: true,
-                  enableFilter: true,
-                  requestFocusOnTap: true,
-                  initialSelection: state.value,
-                  label: Text(labelText),
-                  hintText: hintText,
-                  leadingIcon: leadingIcon,
-                  dropdownMenuEntries: entries,
-                  onSelected: (selected) {
-                    state.didChange(selected);
-                    onChanged(selected);
+                Builder(
+                  builder: (context) {
+                    final isDark = AppTheme.isDark(context);
+                    final inputBorderColor = isDark
+                        ? Colors.white.withAlpha(25)
+                        : const Color(0xFFC7D9FF).withAlpha(150);
+                    final menuBg = isDark
+                        ? const Color(0xFF1A2538).withAlpha(224)
+                        : const Color(0xFFF9FBFF).withAlpha(222);
+
+                    return DropdownMenu<T>(
+                      enabled: enabled,
+                      width: double.infinity,
+                      menuHeight: 320,
+                      enableSearch: true,
+                      enableFilter: true,
+                      requestFocusOnTap: true,
+                      initialSelection: state.value,
+                      label: Text(labelText),
+                      hintText: hintText,
+                      leadingIcon: leadingIcon,
+                      dropdownMenuEntries: entries,
+                      inputDecorationTheme: InputDecorationTheme(
+                        filled: true,
+                        fillColor: AppTheme.glassInputFill(context),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: inputBorderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: inputBorderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryColor,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                      menuStyle: MenuStyle(
+                        backgroundColor: WidgetStatePropertyAll(menuBg),
+                        side: WidgetStatePropertyAll(
+                          BorderSide(color: inputBorderColor),
+                        ),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        elevation: const WidgetStatePropertyAll(0),
+                      ),
+                      onSelected: (selected) {
+                        state.didChange(selected);
+                        onChanged(selected);
+                      },
+                    );
                   },
                 ),
                 if (state.hasError)

@@ -201,7 +201,7 @@ class AppTheme {
     brightness: Brightness.light,
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
-    scaffoldBackgroundColor: const Color(0xFFF6FAFF),
+    scaffoldBackgroundColor: Colors.transparent,
     fontFamily: 'Poppins',
     textTheme: const TextTheme(
       titleLarge: TextStyle(fontSize: 22, height: 1.25),
@@ -234,9 +234,14 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: const Color(0xFFC7D9FF).withAlpha(150),
+          width: 1,
+        ),
       ),
-      color: cardColor,
+      color: const Color(0xFFF9FBFF).withAlpha(196),
       surfaceTintColor: Colors.transparent,
+      shadowColor: const Color(0xFF3B82F6).withAlpha(22),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -298,14 +303,18 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFFF9FBFF).withAlpha(188),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(
+          color: const Color(0xFFC7D9FF).withAlpha(150),
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: borderColor),
+        borderSide: BorderSide(
+          color: const Color(0xFFC7D9FF).withAlpha(150),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -334,7 +343,7 @@ class AppTheme {
     snackBarTheme: SnackBarThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       behavior: SnackBarBehavior.floating,
-      backgroundColor: textPrimary,
+      backgroundColor: const Color(0xFF0F172A).withAlpha(222),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
@@ -356,12 +365,59 @@ class AppTheme {
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       surfaceTintColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF9FBFF).withAlpha(210),
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      shape: RoundedRectangleBorder(
+    bottomSheetTheme: BottomSheetThemeData(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       surfaceTintColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF9FBFF).withAlpha(210),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: const Color(0xFFF9FBFF).withAlpha(220),
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: const Color(0xFFC7D9FF).withAlpha(140)),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: Colors.white.withAlpha(70),
+      iconColor: textSecondary,
+      textColor: textPrimary,
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF9FBFF).withAlpha(188),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFFC7D9FF).withAlpha(150)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFFC7D9FF).withAlpha(150)),
+        ),
+      ),
+      menuStyle: MenuStyle(
+        backgroundColor:
+            WidgetStatePropertyAll(const Color(0xFFF9FBFF).withAlpha(222)),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: const Color(0xFFC7D9FF).withAlpha(150)),
+        ),
+        elevation: const WidgetStatePropertyAll(0),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: const Color(0xFFF9FBFF).withAlpha(222),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: primaryColor,
@@ -387,7 +443,7 @@ class AppTheme {
     brightness: Brightness.dark,
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
-    scaffoldBackgroundColor: darkBg,
+    scaffoldBackgroundColor: Colors.transparent,
     fontFamily: 'Poppins',
     textTheme: const TextTheme(
       titleLarge: TextStyle(fontSize: 22, height: 1.25),
@@ -420,9 +476,14 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Colors.white.withAlpha(24),
+          width: 1,
+        ),
       ),
-      color: darkCard,
+      color: const Color(0xFF1A2538).withAlpha(188),
       surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black.withAlpha(55),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -484,14 +545,14 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: darkBgSecondary,
+      fillColor: Colors.white.withAlpha(12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: darkBorder),
+        borderSide: BorderSide(color: Colors.white.withAlpha(25)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: darkBorder),
+        borderSide: BorderSide(color: Colors.white.withAlpha(25)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -522,18 +583,18 @@ class AppTheme {
       behavior: SnackBarBehavior.floating,
       backgroundColor: const Color(0xFF334155),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: darkCard,
-      selectedItemColor: Color(0xFF93C5FD),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: Colors.white.withAlpha(8),
+      selectedItemColor: const Color(0xFF93C5FD),
       unselectedItemColor: darkTextTertiary,
       type: BottomNavigationBarType.fixed,
       elevation: 0,
-      selectedLabelStyle: TextStyle(
+      selectedLabelStyle: const TextStyle(
         fontFamily: 'Poppins',
         fontSize: 11,
         fontWeight: FontWeight.w600,
       ),
-      unselectedLabelStyle: TextStyle(
+      unselectedLabelStyle: const TextStyle(
         fontFamily: 'Poppins',
         fontSize: 11,
         fontWeight: FontWeight.w400,
@@ -542,14 +603,59 @@ class AppTheme {
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       surfaceTintColor: Colors.transparent,
-      backgroundColor: darkCard,
+      backgroundColor: const Color(0xFF1A2538).withAlpha(216),
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      shape: RoundedRectangleBorder(
+    bottomSheetTheme: BottomSheetThemeData(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       surfaceTintColor: Colors.transparent,
-      backgroundColor: darkCard,
+      backgroundColor: const Color(0xFF1A2538).withAlpha(216),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: const Color(0xFF1A2538).withAlpha(224),
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: Colors.white.withAlpha(28)),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: Colors.white.withAlpha(8),
+      iconColor: darkTextSecondary,
+      textColor: darkTextPrimary,
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white.withAlpha(12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+      ),
+      menuStyle: MenuStyle(
+        backgroundColor:
+            WidgetStatePropertyAll(const Color(0xFF1A2538).withAlpha(224)),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: Colors.white.withAlpha(28)),
+        ),
+        elevation: const WidgetStatePropertyAll(0),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: const Color(0xFF1A2538).withAlpha(224),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: Color(0xFF93C5FD),
@@ -643,8 +749,9 @@ class AppTheme {
       ? Colors.white.withAlpha(36)
       : const Color(0xFFC7D9FF).withAlpha(184);
 
-  static Color glassInputFill(BuildContext context) =>
-      isDark(context) ? Colors.white.withAlpha(10) : Colors.white.withAlpha(154);
+  static Color glassInputFill(BuildContext context) => isDark(context)
+      ? Colors.white.withAlpha(10)
+      : Colors.white.withAlpha(154);
 
   static Color glassChipBg(BuildContext context) => isDark(context)
       ? Colors.white.withAlpha(10)
