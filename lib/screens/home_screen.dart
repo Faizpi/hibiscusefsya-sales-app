@@ -279,34 +279,38 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // Floating glass navbar overlaid on top of content
             Positioned(
-              left: 24,
-              right: 24,
-              bottom: MediaQuery.of(context).padding.bottom + 12,
+              left: 28,
+              right: 28,
+              bottom: MediaQuery.of(context).padding.bottom + 10,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(
-                    sigmaX: AppTheme.glassBlur(context, base: 14),
-                    sigmaY: AppTheme.glassBlur(context, base: 14),
+                    sigmaX: AppTheme.glassBlur(context, base: 24),
+                    sigmaY: AppTheme.glassBlur(context, base: 24),
                   ),
                   child: Container(
-                    height: 64,
+                    height: 56,
                     decoration: BoxDecoration(
-                      color: AppTheme.glassColor(context),
-                      borderRadius: BorderRadius.circular(24),
-                      border:
-                          Border.all(color: AppTheme.glassBorderColor(context)),
+                      color: AppTheme.glassColor(context)
+                          .withAlpha(isDark ? 156 : 188),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.glassBorderColor(context)
+                            .withAlpha(isDark ? 120 : 190),
+                        width: 1.2,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 40 : 14),
-                          blurRadius: 24,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withAlpha(isDark ? 46 : 16),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
                           spreadRadius: 0,
                         ),
                         BoxShadow(
                           color:
-                              AppTheme.primaryColor.withAlpha(isDark ? 10 : 6),
-                          blurRadius: 40,
+                              AppTheme.primaryColor.withAlpha(isDark ? 18 : 14),
+                          blurRadius: 30,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -362,27 +366,32 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? selectedColor.withAlpha(isDark ? 30 : 20)
+                    ? selectedColor.withAlpha(isDark ? 42 : 26)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 isSelected ? activeIcon : inactiveIcon,
                 color: isSelected ? selectedColor : unselectedColor,
-                size: 22,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Text(
               label,
+              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? selectedColor : unselectedColor,
+                height: 1.0,
+                letterSpacing: 0.1,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -391,6 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBerandaTab() {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final menuAspectRatio = textScale > 1.05 ? 0.72 : 0.80;
     final auth = Provider.of<AuthProvider>(context);
     final dashboard = Provider.of<DashboardProvider>(context);
     final user = auth.user;
@@ -629,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount:
                             MediaQuery.of(context).size.width < 360 ? 3 : 4,
-                        childAspectRatio: 0.82,
+                        childAspectRatio: menuAspectRatio,
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                       ),
@@ -781,8 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  final canOpenReport = user?.isUser == true ||
-                      user?.hasPermission('can_export_report') == true;
+                  final canOpenReport = user?.isUser == true;
                   if (canOpenReport) {
                     quickCards.add(
                       _buildQuickAction(
@@ -882,8 +892,8 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: AppTheme.menuIconColor(index)
                   .withAlpha(AppTheme.isDark(context) ? 35 : 20),
@@ -894,16 +904,18 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppTheme.isDark(context)
                   ? AppTheme.menuIconColor(index).withAlpha(230)
                   : AppTheme.menuIconColor(index),
-              size: 24,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             item.title,
+            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
               color: AppTheme.textPrimaryColor(context),
+              height: 1.1,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -1003,8 +1015,8 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.glassBorderColor(context)),
             boxShadow: [
               BoxShadow(
-                color:
-                    (isDark ? Colors.black : const Color(0xFF2563EB)).withAlpha(8),
+                color: (isDark ? Colors.black : const Color(0xFF2563EB))
+                    .withAlpha(8),
                 blurRadius: 12,
                 offset: const Offset(0, 3),
               ),
@@ -1051,28 +1063,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   .toList(),
               onChanged: isSwitchEnabled
                   ? (id) async {
-                if (id == null) return;
-                try {
-                  await gudangProv.switchGudang(id);
-                  if (!mounted) return;
-                  await auth.refreshProfile();
-                  if (!mounted) return;
-                  await _refreshWarehouseScopedData(id);
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Gudang berhasil diganti'),
-                        backgroundColor: Colors.green),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Gagal: $e'),
-                        backgroundColor: Colors.red),
-                  );
-                }
-              }
+                      if (id == null) return;
+                      try {
+                        await gudangProv.switchGudang(id);
+                        if (!mounted) return;
+                        await auth.refreshProfile();
+                        if (!mounted) return;
+                        await _refreshWarehouseScopedData(id);
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Gudang berhasil diganti'),
+                              backgroundColor: Colors.green),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Gagal: $e'),
+                              backgroundColor: Colors.red),
+                        );
+                      }
+                    }
                   : null,
             ),
           ),
@@ -1130,6 +1142,9 @@ class _AllMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final menuAspectRatio = textScale > 1.05 ? 0.72 : 0.80;
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
@@ -1148,7 +1163,7 @@ class _AllMenuScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: MediaQuery.of(context).size.width < 360 ? 3 : 4,
-              childAspectRatio: 0.82,
+              childAspectRatio: menuAspectRatio,
               crossAxisSpacing: 8,
               mainAxisSpacing: 12,
             ),
@@ -1167,8 +1182,8 @@ class _AllMenuScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: AppTheme.menuIconColor(index)
                             .withAlpha(AppTheme.isDark(context) ? 35 : 20),
@@ -1179,16 +1194,18 @@ class _AllMenuScreen extends StatelessWidget {
                         color: AppTheme.isDark(context)
                             ? AppTheme.menuIconColor(index).withAlpha(230)
                             : AppTheme.menuIconColor(index),
-                        size: 24,
+                        size: 22,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       item.title,
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textPrimaryColor(context),
+                        height: 1.1,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
