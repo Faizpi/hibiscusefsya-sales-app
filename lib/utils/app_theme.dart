@@ -597,6 +597,29 @@ class AppTheme {
   static LinearGradient cardGradientOf(BuildContext context) =>
       isDark(context) ? darkCardGradient : cardGradient;
 
+  static LinearGradient softBluePinkSurface(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF1A2A44),
+          Color(0xFF2A3552),
+          Color(0xFF3B2540),
+        ],
+      );
+    }
+    return const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFFEFF5FF),
+        Color(0xFFF4EEFF),
+        Color(0xFFFCEFF7),
+      ],
+    );
+  }
+
   static List<BoxShadow> cardShadowOf(BuildContext context) =>
       isDark(context) ? darkCardShadow : cardShadow;
 

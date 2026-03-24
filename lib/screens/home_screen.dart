@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -57,11 +57,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _bottomNavIndex = 0;
 
+  bool _canShowGudangSwitch(dynamic user) {
+    return user?.isAdmin == true || user?.isSpectator == true;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<DashboardProvider>(context, listen: false).fetchDashboard();
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      if (_canShowGudangSwitch(user)) {
+        Provider.of<GudangProvider>(context, listen: false).fetchGudang();
+      }
     });
   }
 
@@ -200,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final nomor = (item['nomor'] ?? item['invoice'] ?? '-').toString();
         final tgl = item['tgl_transaksi']?.toString();
         final subtitle = tgl != null && tgl.isNotEmpty
-            ? 'Status $status • ${Formatters.dateTime(tgl)}'
+            ? 'Status $status ΓÇó ${Formatters.dateTime(tgl)}'
             : 'Status $status';
         notifications.add({
           'title': nomor,
@@ -400,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: CustomScrollView(
         slivers: [
-          // Clean greeting header — on scaffold bg, not gradient
+          // Clean greeting header ΓÇö on scaffold bg, not gradient
           SliverToBoxAdapter(
             child: SafeArea(
               bottom: false,
@@ -548,11 +556,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    // Gudang switch for roles that have switch permission.
-                    if (user != null &&
-                        (user.hasPermission('can_switch_gudang') ||
-                            user.isAdmin ||
-                            user.isSpectator)) ...[
+                    // Gudang switch is explicitly shown in Home for
+                    // admin/spectator accounts.
+                    if (user != null && _canShowGudangSwitch(user)) ...[
                       const SizedBox(height: 14),
                       _buildGudangSwitch(),
                     ],
@@ -957,24 +963,52 @@ class _HomeScreenState extends State<HomeScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             gudangProv.fetchGudang();
           });
-          return const SizedBox.shrink();
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: AppTheme.softBluePinkSurface(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.glassBorderColor(context)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Memuat data gudang...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondaryColor(context),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
-
-        // Only show if admin has more than 1 gudang
-        if (gudangProv.items.length <= 1) return const SizedBox.shrink();
 
         final auth = Provider.of<AuthProvider>(context, listen: false);
         final currentGudangId =
             auth.user?.currentGudangId ?? auth.user?.gudangId;
+        final isSwitchEnabled = gudangProv.items.length > 1;
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withAlpha(8)
-                : AppTheme.primaryColor.withAlpha(8),
+            gradient: AppTheme.softBluePinkSurface(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColorOf(context)),
+            border: Border.all(color: AppTheme.glassBorderColor(context)),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    (isDark ? Colors.black : const Color(0xFF2563EB)).withAlpha(8),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
@@ -1015,7 +1049,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Text(g.namaGudang,
                           style: const TextStyle(fontSize: 13))))
                   .toList(),
-              onChanged: (id) async {
+              onChanged: isSwitchEnabled
+                  ? (id) async {
                 if (id == null) return;
                 try {
                   await gudangProv.switchGudang(id);
@@ -1037,7 +1072,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         backgroundColor: Colors.red),
                   );
                 }
-              },
+              }
+                  : null,
             ),
           ),
         );
