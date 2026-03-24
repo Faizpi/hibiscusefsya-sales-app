@@ -59,39 +59,59 @@ class DetailPrintActionsHelper {
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('QR Code Invoice'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              QrImageView(
-                data: qr,
-                size: 220,
-                version: QrVersions.auto,
-              ),
-              if (invoiceUrl != null) ...[
-                const SizedBox(height: 10),
-                SelectableText(
-                  invoiceUrl,
-                  style: const TextStyle(fontSize: 12),
+        builder: (ctx) => Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'QR Code Invoice',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: QrImageView(
+                        data: qr,
+                        size: 220,
+                        version: QrVersions.auto,
+                      ),
+                    ),
+                    if (invoiceUrl != null) ...[
+                      const SizedBox(height: 10),
+                      SelectableText(
+                        invoiceUrl,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (invoiceUrl != null)
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              await _openUrl(context, invoiceUrl);
+                            },
+                            child: const Text('Open Invoice'),
+                          ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Tutup'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ],
-          ),
-          actions: [
-            if (invoiceUrl != null)
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  await _openUrl(context, invoiceUrl);
-                },
-                child: const Text('Open Invoice'),
               ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
             ),
-          ],
+          ),
         ),
       );
     } catch (e) {
