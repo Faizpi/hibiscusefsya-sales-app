@@ -20,6 +20,36 @@ class _ProdukDetailScreenState extends State<ProdukDetailScreen> {
   Map<String, dynamic>? _data;
   bool _isLoading = true;
 
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  int _stockComponent(dynamic item, String snakeKey, String camelKey) {
+    if (item is! Map) return 0;
+    return _asInt(item[snakeKey] ?? item[camelKey]);
+  }
+
+  int _resolveTotalStok(dynamic item) {
+    if (item is! Map) return 0;
+    final stokPenjualan =
+        _stockComponent(item, 'stok_penjualan', 'stokPenjualan');
+    final stokGratis = _stockComponent(item, 'stok_gratis', 'stokGratis');
+    final stokSample = _stockComponent(item, 'stok_sample', 'stokSample');
+    final hasComponentKey = item.containsKey('stok_penjualan') ||
+        item.containsKey('stokPenjualan') ||
+        item.containsKey('stok_gratis') ||
+        item.containsKey('stokGratis') ||
+        item.containsKey('stok_sample') ||
+        item.containsKey('stokSample');
+    if (hasComponentKey) {
+      return stokPenjualan + stokGratis + stokSample;
+    }
+    return _asInt(item['stok']);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -178,21 +208,30 @@ class _ProdukDetailScreenState extends State<ProdukDetailScreen> {
                                 fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
                         ...(_data!['stok'] as List? ?? []).map((s) {
+                          final stokPenjualan =
+                            _stockComponent(s, 'stok_penjualan', 'stokPenjualan');
+                          final stokGratis =
+                            _stockComponent(s, 'stok_gratis', 'stokGratis');
+                          final stokSample =
+                            _stockComponent(s, 'stok_sample', 'stokSample');
+                          final totalStok = _resolveTotalStok(s);
+                          final gudangName = s['gudang']?['nama_gudang'] ??
+                            s['gudang']?['nama'] ??
+                            'Gudang #${s['gudang_id']}';
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
-                              title: Text(s['gudang']?['nama_gudang'] ??
-                                  'Gudang #${s['gudang_id']}'),
-                              trailing: Text('${s['stok'] ?? 0}',
+                            title: Text(gudangName),
+                            trailing: Text('$totalStok',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16)),
                               subtitle: Wrap(spacing: 8, children: [
-                                Text('Jual: ${s['stok_penjualan'] ?? 0}',
+                            Text('Jual: $stokPenjualan',
                                     style: const TextStyle(fontSize: 12)),
-                                Text('Gratis: ${s['stok_gratis'] ?? 0}',
+                            Text('Gratis: $stokGratis',
                                     style: const TextStyle(fontSize: 12)),
-                                Text('Sample: ${s['stok_sample'] ?? 0}',
+                            Text('Sample: $stokSample',
                                     style: const TextStyle(fontSize: 12)),
                               ]),
                             ),

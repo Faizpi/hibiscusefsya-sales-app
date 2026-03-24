@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/gudang_provider.dart';
+import '../providers/stok_provider.dart';
 import '../utils/formatters.dart';
 import '../utils/app_theme.dart';
 import '../widgets/glass_container.dart';
@@ -542,7 +543,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     // Gudang switch for roles that have switch permission.
                     if (user != null &&
-                        user.hasPermission('can_switch_gudang')) ...[
+                      (user.hasPermission('can_switch_gudang') ||
+                        user.isAdmin ||
+                        user.isSpectator)) ...[
                       const SizedBox(height: 14),
                       _buildGudangSwitch(),
                     ],
@@ -979,6 +982,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   await gudangProv.switchGudang(id);
                   if (!mounted) return;
                   await auth.refreshProfile();
+                  if (!mounted) return;
+                  await Provider.of<DashboardProvider>(context, listen: false)
+                      .fetchDashboard();
+                  if (!mounted) return;
+                  await Provider.of<StokProvider>(context, listen: false)
+                      .fetchStok(gudangId: id);
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

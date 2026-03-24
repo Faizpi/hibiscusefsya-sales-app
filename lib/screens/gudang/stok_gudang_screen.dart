@@ -28,6 +28,61 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
   final _keteranganController = TextEditingController();
   bool _isSubmitting = false;
 
+  int? _activeGudangId() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    return user?.currentGudangId ?? user?.gudangId;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  int _stockComponent(dynamic item, String snakeKey, String camelKey) {
+    if (item is! Map) return 0;
+    return _asInt(item[snakeKey] ?? item[camelKey]);
+  }
+
+  int _resolveTotalStok(dynamic item) {
+    if (item is! Map) return 0;
+    final stokPenjualan =
+        _stockComponent(item, 'stok_penjualan', 'stokPenjualan');
+    final stokGratis = _stockComponent(item, 'stok_gratis', 'stokGratis');
+    final stokSample = _stockComponent(item, 'stok_sample', 'stokSample');
+    final hasComponentKey = item.containsKey('stok_penjualan') ||
+        item.containsKey('stokPenjualan') ||
+        item.containsKey('stok_gratis') ||
+        item.containsKey('stokGratis') ||
+        item.containsKey('stok_sample') ||
+        item.containsKey('stokSample');
+
+    if (hasComponentKey) {
+      return stokPenjualan + stokGratis + stokSample;
+    }
+    return _asInt(item['stok']);
+  }
+
+  String _resolveGudangName(dynamic item, int gId, Map<int, String> knownNames) {
+    if (knownNames[gId] != null && knownNames[gId]!.trim().isNotEmpty) {
+      return knownNames[gId]!;
+    }
+    if (item is Map) {
+      final nestedGudang = item['gudang'];
+      if (nestedGudang is Map) {
+        final name = (nestedGudang['nama_gudang'] ??
+                nestedGudang['nama'] ??
+                nestedGudang['name'])
+            ?.toString();
+        if (name != null && name.trim().isNotEmpty) {
+          return name;
+        }
+      }
+    }
+    return 'Gudang $gId';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -36,8 +91,14 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
       final canEditStockManual =
           user?.hasPermission('can_edit_stock_manual') == true &&
               user?.isAdmin != true;
+      final activeGudangId = _activeGudangId();
 
-      Provider.of<StokProvider>(context, listen: false).fetchStok();
+      if (_selectedGudangId == null && activeGudangId != null) {
+        setState(() => _selectedGudangId = activeGudangId);
+      }
+
+      Provider.of<StokProvider>(context, listen: false)
+          .fetchStok(gudangId: activeGudangId);
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       if (canEditStockManual) {
         Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
@@ -65,7 +126,7 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
         'stok_gratis': int.tryParse(_stokGratisController.text) ?? 0,
         'stok_sample': int.tryParse(_stokSampleController.text) ?? 0,
         'keterangan': _keteranganController.text,
-      });
+      }, refreshGudangId: _selectedGudangId ?? _activeGudangId());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Stok berhasil disimpan!'),
@@ -145,7 +206,8 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Provider.of<StokProvider>(context, listen: false).fetchStok();
+          await Provider.of<StokProvider>(context, listen: false)
+              .fetchStok(gudangId: _selectedGudangId ?? _activeGudangId());
           if (context.mounted) {
             await Provider.of<GudangProvider>(context, listen: false)
                 .fetchGudang();
@@ -283,12 +345,16 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                 // Group stok by gudang
                 final Map<int, List<dynamic>> grouped = {};
                 final Map<int, String> gudangNames = {};
+                for (final g in gudangProvider.items) {
+                  gudangNames[g.id] = g.namaGudang;
+                }
+
                 for (final item in stokProvider.stokData) {
-                  final gId = item['gudang_id'] ?? item['gudang']?['id'] ?? 0;
+                  if (item is! Map) continue;
+                  final gId = _asInt(item['gudang_id'] ?? item['gudang']?['id']);
                   if (!grouped.containsKey(gId)) {
                     grouped[gId] = [];
-                    gudangNames[gId] =
-                        item['gudang']?['nama_gudang'] ?? 'Gudang $gId';
+                    gudangNames[gId] = _resolveGudangName(item, gId, gudangNames);
                   }
                   grouped[gId]!.add(item);
                 }
@@ -297,7 +363,6 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                 for (final g in gudangProvider.items) {
                   if (!grouped.containsKey(g.id)) {
                     grouped[g.id] = [];
-                    gudangNames[g.id] = g.namaGudang;
                   }
                 }
 
@@ -335,6 +400,13 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                               ]
                             : items.map<Widget>((item) {
                                 final produk = item['produk'];
+                                final stokPenjualan = _stockComponent(
+                                  item, 'stok_penjualan', 'stokPenjualan');
+                                final stokGratis = _stockComponent(
+                                  item, 'stok_gratis', 'stokGratis');
+                                final stokSample =
+                                  _stockComponent(item, 'stok_sample', 'stokSample');
+                                final totalStok = _resolveTotalStok(item);
                                 return ListTile(
                                   dense: true,
                                   title: Text(produk?['nama_produk'] ?? '-',
@@ -346,19 +418,13 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                                       runSpacing: 4,
                                       children: [
                                         _StokChip(
-                                            'Penjualan',
-                                            item['stok_penjualan'] ?? 0,
-                                            AppTheme.successColor),
+                                      'Penjualan', stokPenjualan, AppTheme.successColor),
                                         _StokChip(
-                                            'Gratis',
-                                            item['stok_gratis'] ?? 0,
-                                            AppTheme.infoColor),
+                                      'Gratis', stokGratis, AppTheme.infoColor),
                                         _StokChip(
-                                            'Sample',
-                                            item['stok_sample'] ?? 0,
-                                            AppTheme.warningColor),
+                                      'Sample', stokSample, AppTheme.warningColor),
                                       ]),
-                                  trailing: Text('Total: ${item['stok'] ?? 0}',
+                                  trailing: Text('Total: $totalStok',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,

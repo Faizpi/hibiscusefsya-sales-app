@@ -12,7 +12,8 @@ class GudangModel {
   factory GudangModel.fromJson(Map<String, dynamic> json) {
     return GudangModel(
       id: _parseInt(json['id']),
-      namaGudang: json['nama_gudang'] ?? '',
+      namaGudang: (json['nama_gudang'] ?? json['nama'] ?? json['name'] ?? '')
+          .toString(),
       alamatGudang: json['alamat_gudang'],
     );
   }
@@ -100,13 +101,22 @@ class StokModel {
         ? json['gudang'] as Map<String, dynamic>
         : null;
 
+    final stokPenjualan = _parseInt(json['stok_penjualan']);
+    final stokGratis = _parseInt(json['stok_gratis']);
+    final stokSample = _parseInt(json['stok_sample']);
+    final hasComponentStok = json.containsKey('stok_penjualan') ||
+        json.containsKey('stok_gratis') ||
+        json.containsKey('stok_sample');
+
     return StokModel(
       gudangId: _parseInt(json['gudang_id'] ?? nestedGudang?['id']),
       produkId: _parseInt(json['produk_id'] ?? nestedProduk?['id']),
-      stok: _parseInt(json['stok']),
-      stokPenjualan: _parseInt(json['stok_penjualan']),
-      stokGratis: _parseInt(json['stok_gratis']),
-      stokSample: _parseInt(json['stok_sample']),
+      stok: hasComponentStok
+          ? stokPenjualan + stokGratis + stokSample
+          : _parseInt(json['stok']),
+      stokPenjualan: stokPenjualan,
+      stokGratis: stokGratis,
+      stokSample: stokSample,
       produk: nestedProduk != null ? ProdukModel.fromJson(nestedProduk) : null,
       gudang: nestedGudang != null ? GudangModel.fromJson(nestedGudang) : null,
     );

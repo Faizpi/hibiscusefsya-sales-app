@@ -12,12 +12,13 @@ class StokProvider with ChangeNotifier {
   List<dynamic> get logData => _logData;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int? _lastGudangId;
 
   void updateToken(String? token) {
     _token = token;
   }
 
-  Future<void> fetchStok() async {
+  Future<void> fetchStok({int? gudangId}) async {
     if (_token == null) return;
     _isLoading = true;
     _error = null;
@@ -25,8 +26,13 @@ class StokProvider with ChangeNotifier {
 
     try {
       final api = ApiService(token: _token);
-      final response = await api.get('stok');
+      final params = <String, String>{};
+      if (gudangId != null) {
+        params['gudang_id'] = gudangId.toString();
+      }
+      final response = await api.get('stok', params: params);
       _stokData = _extractList(response);
+      _lastGudangId = gudangId;
     } catch (e) {
       _error = e.toString();
     }
@@ -62,10 +68,10 @@ class StokProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStok(Map<String, dynamic> data) async {
+  Future<void> updateStok(Map<String, dynamic> data, {int? refreshGudangId}) async {
     final api = ApiService(token: _token);
     await api.post('stok', body: data);
-    await fetchStok();
+    await fetchStok(gudangId: refreshGudangId ?? _lastGudangId);
   }
 
   List<dynamic> _extractList(dynamic response) {
