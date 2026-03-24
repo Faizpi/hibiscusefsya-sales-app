@@ -48,65 +48,71 @@ class AppTheme {
   static const Color darkBorder = Color(0xFF334155);
   static const Color darkDivider = Color(0xFF334155);
 
-  // ── Gradients (Soft Blue -> Soft Pink, vertical) ──
+  // ── Gradients (Soft Blue -> Soft Pink, cohesive system-wide) ──
   static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1D4ED8),
-      Color(0xFF2563EB),
-      Color(0xFFBE185D),
+      Color(0xFF4E7EF4),
+      Color(0xFF739FFF),
+      Color(0xFFD97FB3),
     ],
+    stops: [0.0, 0.58, 1.0],
   );
 
   static const LinearGradient headerGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1D4ED8),
-      Color(0xFF2563EB),
-      Color(0xFFBE185D),
+      Color(0xFF4E7EF4),
+      Color(0xFF739FFF),
+      Color(0xFFD97FB3),
     ],
+    stops: [0.0, 0.58, 1.0],
   );
 
   static const LinearGradient buttonGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1D4ED8),
-      Color(0xFF2563EB),
-      Color(0xFFBE185D),
+      Color(0xFF4576EF),
+      Color(0xFF6693FA),
+      Color(0xFFC961A0),
     ],
+    stops: [0.0, 0.6, 1.0],
   );
 
   static const LinearGradient cardGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1E3A5F),
-      Color(0xFF2A436E),
-      Color(0xFF6B2D56),
+      Color(0xFFEAF1FF),
+      Color(0xFFF4F7FF),
+      Color(0xFFFBEFF7),
     ],
+    stops: [0.0, 0.62, 1.0],
   );
 
   static const LinearGradient darkPrimaryGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1D4ED8),
-      Color(0xFF2563EB),
-      Color(0xFFBE185D),
+      Color(0xFF243B66),
+      Color(0xFF2F4D7F),
+      Color(0xFF5A3B60),
     ],
+    stops: [0.0, 0.58, 1.0],
   );
 
   static const LinearGradient darkCardGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF1E3A5F),
-      Color(0xFF2A436E),
-      Color(0xFF6B2D56),
+      Color(0xFF1A263D),
+      Color(0xFF202F4A),
+      Color(0xFF3A2941),
     ],
+    stops: [0.0, 0.62, 1.0],
   );
 
   // For menu icon backgrounds
@@ -603,10 +609,11 @@ class AppTheme {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF1A2A44),
-          Color(0xFF2A3552),
-          Color(0xFF3B2540),
+          Color(0xFF1A2740),
+          Color(0xFF253550),
+          Color(0xFF35273E),
         ],
+        stops: [0.0, 0.62, 1.0],
       );
     }
     return const LinearGradient(
@@ -614,9 +621,10 @@ class AppTheme {
       end: Alignment.bottomRight,
       colors: [
         Color(0xFFEFF5FF),
-        Color(0xFFF4EEFF),
-        Color(0xFFFCEFF7),
+        Color(0xFFF5F2FF),
+        Color(0xFFFCEFF8),
       ],
+      stops: [0.0, 0.62, 1.0],
     );
   }
 

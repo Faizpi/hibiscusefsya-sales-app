@@ -128,23 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                                 color: AppTheme.glassBorderColor(context)),
-                            gradient: AppTheme.isDark(context)
-                                ? LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withAlpha(10),
-                                      Colors.white.withAlpha(4),
-                                    ],
-                                  )
-                                : LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withAlpha(200),
-                                      Colors.white.withAlpha(140),
-                                    ],
-                                  ),
+                            gradient: AppTheme.softBluePinkSurface(context),
                             boxShadow: AppTheme.glassShadow(context),
                           ),
                           child: Form(
