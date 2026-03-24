@@ -30,8 +30,10 @@ class StokProvider with ChangeNotifier {
       if (gudangId != null) {
         params['gudang_id'] = gudangId.toString();
       }
-      final response = await api.get('stok', params: params);
-      _stokData = _extractList(response);
+      // The stock screen expects a flat list of stock rows with produk + gudang.
+      // Use gudang/stok endpoint (not stok) and keep a fallback normalizer.
+      final response = await api.get('gudang/stok', params: params);
+      _stokData = _extractStokList(response);
       _lastGudangId = gudangId;
     } catch (e) {
       _error = e.toString();
@@ -68,7 +70,8 @@ class StokProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStok(Map<String, dynamic> data, {int? refreshGudangId}) async {
+  Future<void> updateStok(Map<String, dynamic> data,
+      {int? refreshGudangId}) async {
     final api = ApiService(token: _token);
     await api.post('stok', body: data);
     await fetchStok(gudangId: refreshGudangId ?? _lastGudangId);
@@ -89,5 +92,39 @@ class StokProvider with ChangeNotifier {
     if (response['items'] is List) return response['items'] as List<dynamic>;
     if (response['rows'] is List) return response['rows'] as List<dynamic>;
     return [];
+  }
+
+  List<dynamic> _extractStokList(dynamic response) {
+    final list = _extractList(response);
+
+    // Expected format from /gudang/stok: flat GudangProduk rows.
+    final looksFlat = list.isNotEmpty &&
+        list.first is Map &&
+        (list.first['produk'] != null || list.first['gudang'] != null);
+    if (looksFlat || list.isEmpty) return list;
+
+    // Legacy format fallback from /stok: list of gudang with produk_stok.
+    final flattened = <dynamic>[];
+    for (final row in list) {
+      if (row is! Map) continue;
+      final gudangId = row['id'];
+      final gudangName = row['nama_gudang'] ?? row['nama'] ?? row['name'];
+      final stokRows = row['produk_stok'] ?? row['produkStok'];
+      if (stokRows is! List) continue;
+
+      for (final item in stokRows) {
+        if (item is! Map) continue;
+        final merged = Map<String, dynamic>.from(item);
+        merged['gudang_id'] = merged['gudang_id'] ?? gudangId;
+        merged['gudang'] = merged['gudang'] ??
+            {
+              'id': gudangId,
+              'nama_gudang': gudangName,
+            };
+        flattened.add(merged);
+      }
+    }
+
+    return flattened;
   }
 }

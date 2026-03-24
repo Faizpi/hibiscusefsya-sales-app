@@ -107,13 +107,15 @@ class DetailPrintActionsHelper {
     try {
       final payload = await _getQrPayload(context, type: type, id: id);
       if (payload == null) return;
+      final receiptUrl = payload['receiptUrl'];
       final invoiceUrl = payload['invoiceUrl'];
-      if (invoiceUrl == null || invoiceUrl.isEmpty) {
+      final targetUrl = receiptUrl ?? invoiceUrl;
+      if (targetUrl == null || targetUrl.isEmpty) {
         _snack(context, 'Invoice URL tidak tersedia untuk struk.',
             isError: true);
         return;
       }
-      await _openUrl(context, invoiceUrl);
+      await _openUrl(context, targetUrl);
     } catch (e) {
       _handleError(context, e, fallback: 'Gagal membuka struk invoice.');
     }
@@ -303,6 +305,10 @@ class DetailPrintActionsHelper {
         _findString(data, 'url') ??
         _findString(response, 'invoice_url') ??
         _findString(response, 'public_url');
+    final receiptUrl = _findString(data, 'receipt_url') ??
+        _findString(data, 'struk_url') ??
+        _findString(response, 'receipt_url') ??
+        _findString(response, 'struk_url');
 
     if (qr == null || qr.trim().isEmpty) {
       _snack(context, 'QR payload tidak ditemukan.', isError: true);
@@ -311,6 +317,7 @@ class DetailPrintActionsHelper {
 
     return {
       'qr': qr,
+      if (receiptUrl != null && receiptUrl.isNotEmpty) 'receiptUrl': receiptUrl,
       if (invoiceUrl != null && invoiceUrl.isNotEmpty) 'invoiceUrl': invoiceUrl,
     };
   }
