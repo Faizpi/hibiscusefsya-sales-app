@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.user;
     final isDark = AppTheme.isDark(context);
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       body: user == null
           ? Center(
@@ -765,7 +765,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Ubah Password'),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/gudang_provider.dart';
 import '../../models/produk_model.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 class GudangFormScreen extends StatefulWidget {
   final GudangModel? gudang;
@@ -73,7 +74,7 @@ class _GudangFormScreenState extends State<GudangFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit Gudang' : 'Tambah Gudang'),
         flexibleSpace: Container(

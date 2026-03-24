@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 /// Reusable barcode/QR scanner screen.
 ///
@@ -14,7 +15,7 @@ import '../../utils/app_theme.dart';
 /// );
 /// ```
 class BarcodeScannerScreen extends StatefulWidget {
-  /// 'produk' → matches item_code, 'kontak' → matches kode_kontak
+  /// 'produk' â†’ matches item_code, 'kontak' â†’ matches kode_kontak
   final String scanType;
 
   /// List of maps with 'id', 'item_code'/'kode_kontak', 'nama'/...
@@ -125,7 +126,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         }
       }
 
-      // Success — return item
+      // Success â€” return item
       Navigator.pop(context, foundItem);
     } else {
       setState(() {
@@ -144,7 +145,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(widget.scanType == 'kontak'
             ? 'Scan Kode Kontak'

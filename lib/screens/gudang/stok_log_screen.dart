@@ -6,6 +6,7 @@ import '../../providers/gudang_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_skeletons.dart';
+import '../../widgets/glass_container.dart';
 
 class StokLogScreen extends StatefulWidget {
   const StokLogScreen({super.key});
@@ -59,7 +60,7 @@ class _StokLogScreenState extends State<StokLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Riwayat Stok'),
         flexibleSpace: Container(

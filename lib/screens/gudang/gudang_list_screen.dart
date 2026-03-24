@@ -5,6 +5,7 @@ import '../../providers/gudang_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'gudang_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class GudangListScreen extends StatefulWidget {
   const GudangListScreen({super.key});
@@ -27,7 +28,7 @@ class _GudangListScreenState extends State<GudangListScreen> {
     final user = Provider.of<AuthProvider>(context).user;
     final isSuperAdmin = user?.isSuperAdmin ?? false;
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Gudang'),

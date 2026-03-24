@@ -8,6 +8,7 @@ import '../../widgets/app_skeletons.dart';
 import '../../widgets/summary_cards.dart';
 import 'biaya_detail_screen.dart';
 import 'biaya_create_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class BiayaListScreen extends StatefulWidget {
   const BiayaListScreen({super.key});
@@ -41,7 +42,7 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
     final user = Provider.of<AuthProvider>(context).user;
     final isDark = AppTheme.isDark(context);
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Biaya'),

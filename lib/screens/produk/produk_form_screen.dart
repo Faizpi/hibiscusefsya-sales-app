@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/produk_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 class ProdukFormScreen extends StatefulWidget {
   final Map<String, dynamic>? produk;
@@ -96,7 +97,7 @@ class _ProdukFormScreenState extends State<ProdukFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Edit Produk' : 'Tambah Produk Baru'),
         flexibleSpace: Container(

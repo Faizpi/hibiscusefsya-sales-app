@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +30,6 @@ import 'gudang/stok_gudang_screen.dart';
 import 'gudang/stok_log_screen.dart';
 import 'pengguna/pengguna_list_screen.dart';
 import 'profile_screen.dart';
-import 'login_screen.dart';
 import 'laporan/export_report_screen.dart';
 
 class _MenuItemData {
@@ -245,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final nomor = (item['nomor'] ?? item['invoice'] ?? '-').toString();
         final tgl = item['tgl_transaksi']?.toString();
         final subtitle = tgl != null && tgl.isNotEmpty
-            ? 'Status $status ΓÇó ${Formatters.dateTime(tgl)}'
+            ? 'Status $status GÇó ${Formatters.dateTime(tgl)}'
             : 'Status $status';
         notifications.add({
           'title': nomor,
@@ -515,7 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: CustomScrollView(
         slivers: [
-          // Clean greeting header ΓÇö on scaffold bg, not gradient
+          // Clean greeting header GÇö on scaffold bg, not gradient
           SliverToBoxAdapter(
             child: SafeArea(
               bottom: false,
@@ -1219,10 +1218,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pop(context);
               await Provider.of<AuthProvider>(context, listen: false).logout();
               if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/login', (_) => false);
             },
             child: const Text('Keluar'),
           ),
@@ -1242,7 +1239,7 @@ class _AllMenuScreen extends StatelessWidget {
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final menuAspectRatio = textScale > 1.05 ? 0.72 : 0.80;
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Semua Menu'),

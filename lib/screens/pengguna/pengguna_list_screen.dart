@@ -5,6 +5,7 @@ import '../../providers/user_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'pengguna_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PenggunaListScreen extends StatefulWidget {
   const PenggunaListScreen({super.key});
@@ -85,7 +86,7 @@ class _PenggunaListScreenState extends State<PenggunaListScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Manajemen User'),

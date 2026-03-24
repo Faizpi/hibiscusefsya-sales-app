@@ -9,6 +9,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
+import '../../widgets/glass_container.dart';
 
 class PenerimaanCreateScreen extends StatefulWidget {
   const PenerimaanCreateScreen({super.key});
@@ -146,7 +147,7 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Buat Penerimaan Barang'),
         flexibleSpace: Container(

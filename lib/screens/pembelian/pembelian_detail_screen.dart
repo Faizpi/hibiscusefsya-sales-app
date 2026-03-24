@@ -9,6 +9,7 @@ import '../../utils/detail_print_actions_helper.dart';
 import '../../widgets/app_skeletons.dart';
 import 'pembelian_edit_screen.dart';
 import '../../widgets/lampiran_section.dart';
+import '../../widgets/glass_container.dart';
 
 class PembelianDetailScreen extends StatefulWidget {
   final int id;
@@ -47,7 +48,7 @@ class _PembelianDetailScreenState extends State<PembelianDetailScreen> {
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
 
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?.nomor ?? 'Detail Pembelian'),
         flexibleSpace: Container(
@@ -203,7 +204,7 @@ class _PembelianDetailScreenState extends State<PembelianDetailScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} × ${Formatters.currency(item.hargaSatuan)}',
+                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} Ã— ${Formatters.currency(item.hargaSatuan)}',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: AppTheme.textSecondaryColor(

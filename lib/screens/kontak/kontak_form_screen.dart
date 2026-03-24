@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/kontak_model.dart';
 import '../../providers/kontak_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 class KontakFormScreen extends StatefulWidget {
   final KontakModel? kontak;
@@ -93,7 +94,7 @@ class _KontakFormScreenState extends State<KontakFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Edit Kontak' : 'Tambah Kontak Baru'),
         flexibleSpace: Container(

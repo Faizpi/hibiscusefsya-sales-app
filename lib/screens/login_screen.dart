@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../utils/app_theme.dart';
 import 'home_screen.dart';
+import '../widgets/glass_container.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -297,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Footer
                   Text(
-                    '© 2026 Hibiscus Efsya. All rights reserved.',
+                    'Â© 2026 Hibiscus Efsya. All rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

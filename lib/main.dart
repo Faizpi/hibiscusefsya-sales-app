@@ -14,6 +14,7 @@ import 'providers/gudang_provider.dart';
 import 'providers/stok_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/theme_provider.dart';
+import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
 import 'utils/app_theme.dart';
 import 'widgets/glass_container.dart';
@@ -102,6 +103,9 @@ class MyApp extends StatelessWidget {
               data: normalizedMediaQuery,
               child: GlobalGlassBackground(child: child),
             );
+          },
+          routes: {
+            '/login': (_) => const LoginScreen(),
           },
           home: const SplashScreen(),
         ),

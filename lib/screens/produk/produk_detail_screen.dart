@@ -7,6 +7,7 @@ import '../../utils/formatters.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'produk_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class ProdukDetailScreen extends StatefulWidget {
   final int id;
@@ -105,7 +106,7 @@ class _ProdukDetailScreenState extends State<ProdukDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?['nama_produk'] ?? 'Detail Produk'),
         flexibleSpace: Container(

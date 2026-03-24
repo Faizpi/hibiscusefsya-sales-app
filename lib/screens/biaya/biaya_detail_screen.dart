@@ -9,6 +9,7 @@ import '../../utils/detail_print_actions_helper.dart';
 import '../../widgets/app_skeletons.dart';
 import 'biaya_edit_screen.dart';
 import '../../widgets/lampiran_section.dart';
+import '../../widgets/glass_container.dart';
 
 class BiayaDetailScreen extends StatefulWidget {
   final int id;
@@ -46,7 +47,7 @@ class _BiayaDetailScreenState extends State<BiayaDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?.nomor ?? 'Detail Biaya'),
         flexibleSpace: Container(

@@ -15,6 +15,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PenjualanCreateScreen extends StatefulWidget {
   const PenjualanCreateScreen({super.key});
@@ -359,7 +360,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Buat Penagihan Penjualan'),
         flexibleSpace: Container(

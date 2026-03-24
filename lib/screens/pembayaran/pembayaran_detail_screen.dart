@@ -8,6 +8,7 @@ import '../../utils/app_theme.dart';
 import '../../utils/detail_print_actions_helper.dart';
 import '../../widgets/app_skeletons.dart';
 import '../../widgets/lampiran_section.dart';
+import '../../widgets/glass_container.dart';
 
 class PembayaranDetailScreen extends StatefulWidget {
   final int id;
@@ -45,7 +46,7 @@ class _PembayaranDetailScreenState extends State<PembayaranDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?.nomor ?? 'Detail Pembayaran'),
         flexibleSpace: Container(

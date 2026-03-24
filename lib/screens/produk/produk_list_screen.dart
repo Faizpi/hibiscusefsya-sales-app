@@ -7,6 +7,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'produk_detail_screen.dart';
 import 'produk_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class ProdukListScreen extends StatefulWidget {
   const ProdukListScreen({super.key});
@@ -34,7 +35,7 @@ class _ProdukListScreenState extends State<ProdukListScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Produk'),

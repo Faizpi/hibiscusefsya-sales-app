@@ -7,6 +7,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
+import '../../widgets/glass_container.dart';
 
 class PembayaranCreateScreen extends StatefulWidget {
   const PembayaranCreateScreen({super.key});
@@ -137,7 +138,7 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Terima Pembayaran'),
         flexibleSpace: Container(

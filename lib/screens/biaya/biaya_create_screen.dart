@@ -11,6 +11,7 @@ import '../../widgets/date_picker_field.dart';
 import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
+import '../../widgets/glass_container.dart';
 
 class BiayaCreateScreen extends StatefulWidget {
   const BiayaCreateScreen({super.key});
@@ -164,7 +165,7 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
           title: const Text('Buat Biaya'),
           flexibleSpace: Container(

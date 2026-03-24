@@ -6,6 +6,7 @@ import '../../providers/kontak_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'kontak_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class KontakDetailScreen extends StatefulWidget {
   final int id;
@@ -74,7 +75,7 @@ class _KontakDetailScreenState extends State<KontakDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?.nama ?? 'Detail Kontak'),
         flexibleSpace: Container(
@@ -149,7 +150,7 @@ class _KontakDetailScreenState extends State<KontakDetailScreen> {
                             _InfoRow(
                                 'PIN',
                                 _data!.pin != null && _data!.pin!.isNotEmpty
-                                    ? '••••••'
+                                    ? 'â€¢â€¢â€¢â€¢â€¢â€¢'
                                     : '-'),
                             _InfoRow('Alamat', _data!.alamat ?? '-'),
                             _InfoRow(

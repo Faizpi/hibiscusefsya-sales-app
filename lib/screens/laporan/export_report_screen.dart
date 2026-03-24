@@ -10,6 +10,7 @@ import '../../models/export_options_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
+import '../../widgets/glass_container.dart';
 
 class ExportReportScreen extends StatefulWidget {
   const ExportReportScreen({super.key});
@@ -327,7 +328,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     final canExportReport = user?.hasPermission('can_export_report') == true;
     final options = _options;
 
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Export Laporan'),
         flexibleSpace: Container(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/gudang_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 class PenggunaFormScreen extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -100,7 +101,7 @@ class _PenggunaFormScreenState extends State<PenggunaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Edit Pengguna' : 'Tambah User Baru'),
         flexibleSpace: Container(

@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../models/produk_model.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/glass_container.dart';
 
 class StokGudangScreen extends StatefulWidget {
   const StokGudangScreen({super.key});
@@ -208,7 +209,7 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
         user?.hasPermission('can_edit_stock_manual') == true &&
             user?.isAdmin != true;
 
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Stok Gudang'),
         flexibleSpace: Container(

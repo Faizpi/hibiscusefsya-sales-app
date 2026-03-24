@@ -14,6 +14,7 @@ import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import 'package:file_picker/file_picker.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class KunjunganCreateScreen extends StatefulWidget {
   const KunjunganCreateScreen({super.key});
@@ -359,7 +360,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
           title: const Text('Buat Kunjungan Baru'),
           flexibleSpace: Container(
@@ -679,7 +680,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('← Kembali'),
+                  child: const Text('â† Kembali'),
                 ),
               ),
               const SizedBox(width: 12),

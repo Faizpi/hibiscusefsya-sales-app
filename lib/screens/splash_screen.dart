@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import '../widgets/glass_container.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -61,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,

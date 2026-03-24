@@ -16,6 +16,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PenjualanEditScreen extends StatefulWidget {
   final PenjualanModel data;
@@ -342,7 +343,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Edit Penjualan'),
         flexibleSpace: Container(

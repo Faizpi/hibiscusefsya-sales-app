@@ -10,6 +10,7 @@ import '../../utils/detail_print_actions_helper.dart';
 import '../../widgets/app_skeletons.dart';
 import '../../widgets/lampiran_section.dart';
 import 'penjualan_edit_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PenjualanDetailScreen extends StatefulWidget {
   final int id;
@@ -51,7 +52,7 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.user;
 
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: Text(_data?.nomor ?? 'Detail Penjualan'),
         flexibleSpace: Container(
@@ -238,7 +239,7 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} × ${Formatters.currency(item.hargaSatuan)}',
+                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} Ã— ${Formatters.currency(item.hargaSatuan)}',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: AppTheme.textSecondaryColor(

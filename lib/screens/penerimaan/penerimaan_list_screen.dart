@@ -8,6 +8,7 @@ import '../../widgets/app_skeletons.dart';
 import '../../widgets/summary_cards.dart';
 import 'penerimaan_detail_screen.dart';
 import 'penerimaan_create_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PenerimaanListScreen extends StatefulWidget {
   const PenerimaanListScreen({super.key});
@@ -40,7 +41,7 @@ class _PenerimaanListScreenState extends State<PenerimaanListScreen> {
     final user = Provider.of<AuthProvider>(context).user;
     final isDark = AppTheme.isDark(context);
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Penerimaan Barang'),

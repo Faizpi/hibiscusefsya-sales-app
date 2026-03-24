@@ -247,6 +247,14 @@ class GlassScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final Color? backgroundColor;
+  final Widget? drawer;
+  final Widget? endDrawer;
+  final bool? resizeToAvoidBottomInset;
+  final bool extendBody;
+  final bool extendBodyBehindAppBar;
+  final Widget? bottomSheet;
+  final List<Widget>? persistentFooterButtons;
 
   const GlassScaffold({
     super.key,
@@ -255,6 +263,14 @@ class GlassScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.bottomNavigationBar,
     this.floatingActionButtonLocation,
+    this.backgroundColor,
+    this.drawer,
+    this.endDrawer,
+    this.resizeToAvoidBottomInset,
+    this.extendBody = false,
+    this.extendBodyBehindAppBar = false,
+    this.bottomSheet,
+    this.persistentFooterButtons,
   });
 
   @override
@@ -262,11 +278,19 @@ class GlassScaffold extends StatelessWidget {
     final isDark = AppTheme.isDark(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBg : AppTheme.bgColor,
+      backgroundColor:
+          backgroundColor ?? (isDark ? AppTheme.darkBg : AppTheme.bgColor),
       appBar: appBar,
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
       bottomNavigationBar: bottomNavigationBar,
+      drawer: drawer,
+      endDrawer: endDrawer,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      extendBody: extendBody,
+      extendBodyBehindAppBar: extendBodyBehindAppBar,
+      bottomSheet: bottomSheet,
+      persistentFooterButtons: persistentFooterButtons,
       body: Stack(
         children: [
           // Background gradient & decorative elements

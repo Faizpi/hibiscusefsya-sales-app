@@ -8,6 +8,7 @@ import '../../widgets/app_skeletons.dart';
 import '../../widgets/summary_cards.dart';
 import 'kunjungan_detail_screen.dart';
 import 'kunjungan_create_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class KunjunganListScreen extends StatefulWidget {
   const KunjunganListScreen({super.key});
@@ -41,7 +42,7 @@ class _KunjunganListScreenState extends State<KunjunganListScreen> {
     final user = Provider.of<AuthProvider>(context).user;
     final isDark = AppTheme.isDark(context);
 
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Kunjungan'),

@@ -14,6 +14,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PembelianEditScreen extends StatefulWidget {
   final PembelianModel data;
@@ -292,7 +293,7 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
         title: const Text('Edit Pembelian'),
         flexibleSpace: Container(

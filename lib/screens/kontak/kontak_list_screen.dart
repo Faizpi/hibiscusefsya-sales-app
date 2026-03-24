@@ -7,6 +7,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
 import 'kontak_detail_screen.dart';
 import 'kontak_form_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class KontakListScreen extends StatefulWidget {
   const KontakListScreen({super.key});
@@ -35,7 +36,7 @@ class _KontakListScreenState extends State<KontakListScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    return Scaffold(
+    return GlassScaffold(
       backgroundColor: AppTheme.scaffoldBg(context),
       appBar: AppBar(
         title: const Text('Kontak'),

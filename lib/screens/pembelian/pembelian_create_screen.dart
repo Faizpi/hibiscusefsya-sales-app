@@ -13,6 +13,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class PembelianCreateScreen extends StatefulWidget {
   const PembelianCreateScreen({super.key});
@@ -289,7 +290,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
       appBar: AppBar(
           title: const Text('Buat Permintaan Pembelian'),
           flexibleSpace: Container(
