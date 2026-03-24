@@ -64,7 +64,25 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
     return _asInt(item['stok']);
   }
 
-  String _resolveGudangName(dynamic item, int gId, Map<int, String> knownNames) {
+  int _resolveGudangId(dynamic item) {
+    final fallbackGudangId = _selectedGudangId ?? _activeGudangId();
+    if (item is! Map) return fallbackGudangId ?? 0;
+
+    final nestedGudang = item['gudang'];
+    final rawGudangId = item['gudang_id'] ??
+        item['gudangId'] ??
+        (nestedGudang is Map
+            ? (nestedGudang['id'] ?? nestedGudang['gudang_id'])
+            : null);
+
+    final parsedGudangId = _asInt(rawGudangId);
+    if (parsedGudangId > 0) return parsedGudangId;
+
+    return fallbackGudangId ?? 0;
+  }
+
+  String _resolveGudangName(
+      dynamic item, int gId, Map<int, String> knownNames) {
     if (knownNames[gId] != null && knownNames[gId]!.trim().isNotEmpty) {
       return knownNames[gId]!;
     }
@@ -351,19 +369,14 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
 
                 for (final item in stokProvider.stokData) {
                   if (item is! Map) continue;
-                  final gId = _asInt(item['gudang_id'] ?? item['gudang']?['id']);
+                  final gId = _resolveGudangId(item);
+                  if (gId <= 0) continue;
                   if (!grouped.containsKey(gId)) {
                     grouped[gId] = [];
-                    gudangNames[gId] = _resolveGudangName(item, gId, gudangNames);
+                    gudangNames[gId] =
+                        _resolveGudangName(item, gId, gudangNames);
                   }
                   grouped[gId]!.add(item);
-                }
-
-                // Also add gudangs from provider that might not have stok
-                for (final g in gudangProvider.items) {
-                  if (!grouped.containsKey(g.id)) {
-                    grouped[g.id] = [];
-                  }
                 }
 
                 if (grouped.isEmpty) {
@@ -401,11 +414,11 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                             : items.map<Widget>((item) {
                                 final produk = item['produk'];
                                 final stokPenjualan = _stockComponent(
-                                  item, 'stok_penjualan', 'stokPenjualan');
+                                    item, 'stok_penjualan', 'stokPenjualan');
                                 final stokGratis = _stockComponent(
-                                  item, 'stok_gratis', 'stokGratis');
-                                final stokSample =
-                                  _stockComponent(item, 'stok_sample', 'stokSample');
+                                    item, 'stok_gratis', 'stokGratis');
+                                final stokSample = _stockComponent(
+                                    item, 'stok_sample', 'stokSample');
                                 final totalStok = _resolveTotalStok(item);
                                 return ListTile(
                                   dense: true,
@@ -417,12 +430,12 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
                                       spacing: 8,
                                       runSpacing: 4,
                                       children: [
-                                        _StokChip(
-                                      'Penjualan', stokPenjualan, AppTheme.successColor),
-                                        _StokChip(
-                                      'Gratis', stokGratis, AppTheme.infoColor),
-                                        _StokChip(
-                                      'Sample', stokSample, AppTheme.warningColor),
+                                        _StokChip('Penjualan', stokPenjualan,
+                                            AppTheme.successColor),
+                                        _StokChip('Gratis', stokGratis,
+                                            AppTheme.infoColor),
+                                        _StokChip('Sample', stokSample,
+                                            AppTheme.warningColor),
                                       ]),
                                   trailing: Text('Total: $totalStok',
                                       style: const TextStyle(
