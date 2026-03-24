@@ -292,6 +292,7 @@ class GlassScaffold extends StatelessWidget {
       bottomSheet: bottomSheet,
       persistentFooterButtons: persistentFooterButtons,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // Background gradient & decorative elements
           Positioned.fill(
