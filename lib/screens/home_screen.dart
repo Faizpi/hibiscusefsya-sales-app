@@ -315,32 +315,90 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: Stack(
                       children: [
-                        _buildNavItem(
-                            0,
-                            Icons.home_rounded,
-                            Icons.home_outlined,
-                            'Beranda',
-                            selectedColor,
-                            unselectedColor,
-                            isDark),
-                        _buildNavItem(
-                            1,
-                            Icons.bar_chart_rounded,
-                            Icons.bar_chart_outlined,
-                            'Aktivitas',
-                            selectedColor,
-                            unselectedColor,
-                            isDark),
-                        _buildNavItem(
-                            2,
-                            Icons.person_rounded,
-                            Icons.person_outlined,
-                            'Profil',
-                            selectedColor,
-                            unselectedColor,
-                            isDark),
+                        // Soft top sheen for liquid-glass finish.
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          top: 4,
+                          child: IgnorePointer(
+                            child: Container(
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(isDark ? 18 : 54),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Moving active capsule to create liquid feel.
+                        AnimatedAlign(
+                          duration: const Duration(milliseconds: 320),
+                          curve: Curves.easeOutCubic,
+                          alignment: Alignment(-1 + _bottomNavIndex.toDouble(), 0),
+                          child: FractionallySizedBox(
+                            widthFactor: 1 / 3,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 6),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Colors.white.withAlpha(isDark ? 22 : 68),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.white
+                                        .withAlpha(isDark ? 48 : 138),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white
+                                          .withAlpha(isDark ? 8 : 34),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, -1),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black
+                                          .withAlpha(isDark ? 22 : 8),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            _buildNavItem(
+                                0,
+                                Icons.home_rounded,
+                                Icons.home_outlined,
+                                'Beranda',
+                                selectedColor,
+                                unselectedColor,
+                                isDark),
+                            _buildNavItem(
+                                1,
+                                Icons.bar_chart_rounded,
+                                Icons.bar_chart_outlined,
+                                'Aktivitas',
+                                selectedColor,
+                                unselectedColor,
+                                isDark),
+                            _buildNavItem(
+                                2,
+                                Icons.person_rounded,
+                                Icons.person_outlined,
+                                'Profil',
+                                selectedColor,
+                                unselectedColor,
+                                isDark),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -366,10 +424,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? selectedColor.withAlpha(isDark ? 42 : 26)
+                    ? Colors.white.withAlpha(isDark ? 0 : 6)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
