@@ -7,12 +7,14 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/print_service.dart';
+import '../utils/app_theme.dart';
+import '../widgets/glass_container.dart';
 
 class DetailPrintActionsHelper {
   static List<Widget> buildAppBarActions({
@@ -59,52 +61,143 @@ class DetailPrintActionsHelper {
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,
+        barrierColor: Colors.black.withAlpha(60),
         builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            constraints: const BoxConstraints(maxWidth: 390),
+            child: GlassContainer(
+              variant: GlassVariant.modal,
+              borderRadius: 28,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'QR Code Invoice',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.mainGradient(context),
+                            borderRadius: BorderRadius.circular(11),
+                            boxShadow: AppTheme.elevatedShadow,
+                          ),
+                          child: const Icon(Icons.qr_code_2,
+                              color: Colors.white, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'QR Code Invoice',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2),
+                              ),
+                              Text(
+                                'Scan untuk lihat detail invoice publik',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: QrImageView(
-                        data: qr,
-                        size: 220,
-                        version: QrVersions.auto,
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withAlpha(180)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(16),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: QrImageView(
+                          data: qr,
+                          size: 220,
+                          version: QrVersions.auto,
+                        ),
                       ),
                     ),
                     if (invoiceUrl != null) ...[
-                      const SizedBox(height: 10),
-                      SelectableText(
-                        invoiceUrl,
-                        style: const TextStyle(fontSize: 12),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBg(context).withAlpha(210),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppTheme.borderColorOf(context)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SelectableText(
+                                invoiceUrl,
+                                style:
+                                    const TextStyle(fontSize: 12, height: 1.3),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Copy URL',
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                    ClipboardData(text: invoiceUrl));
+                                if (!context.mounted) return;
+                                _snack(context, 'URL invoice disalin');
+                              },
+                              icon: const Icon(
+                                Icons.content_copy_rounded,
+                                size: 18,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     const SizedBox(height: 14),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        if (invoiceUrl != null)
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              await _openUrl(context, invoiceUrl);
-                            },
-                            child: const Text('Open Invoice'),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Tutup'),
                           ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Tutup'),
                         ),
+                        if (invoiceUrl != null) ...[
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await _openUrl(context, invoiceUrl);
+                              },
+                              icon: const Icon(Icons.open_in_new_rounded,
+                                  size: 18),
+                              label: const Text('Open Invoice'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
