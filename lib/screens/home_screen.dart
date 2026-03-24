@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/biaya_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/gudang_provider.dart';
+import '../providers/kunjungan_provider.dart';
+import '../providers/pembayaran_provider.dart';
+import '../providers/pembelian_provider.dart';
+import '../providers/penerimaan_barang_provider.dart';
+import '../providers/penjualan_provider.dart';
+import '../providers/produk_provider.dart';
 import '../providers/stok_provider.dart';
 import '../utils/formatters.dart';
 import '../utils/app_theme.dart';
@@ -543,9 +550,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     // Gudang switch for roles that have switch permission.
                     if (user != null &&
-                      (user.hasPermission('can_switch_gudang') ||
-                        user.isAdmin ||
-                        user.isSpectator)) ...[
+                        (user.hasPermission('can_switch_gudang') ||
+                            user.isAdmin ||
+                            user.isSpectator)) ...[
                       const SizedBox(height: 14),
                       _buildGudangSwitch(),
                     ],
@@ -910,6 +917,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _refreshWarehouseScopedData(int gudangId) async {
+    // Refresh all warehouse-sensitive modules after switch so data from
+    // previous warehouse does not remain in list caches.
+    final refreshTasks = <Future<void>>[
+      Provider.of<DashboardProvider>(context, listen: false).fetchDashboard(),
+      Provider.of<StokProvider>(context, listen: false)
+          .fetchStok(gudangId: gudangId),
+      Provider.of<ProdukProvider>(context, listen: false).fetchProduk(),
+      Provider.of<PenjualanProvider>(context, listen: false)
+          .fetchPenjualan(refresh: true),
+      Provider.of<PembelianProvider>(context, listen: false)
+          .fetchPembelian(refresh: true),
+      Provider.of<KunjunganProvider>(context, listen: false)
+          .fetchKunjungan(refresh: true),
+      Provider.of<PembayaranProvider>(context, listen: false)
+          .fetchPembayaran(refresh: true),
+      Provider.of<PenerimaanBarangProvider>(context, listen: false)
+          .fetchPenerimaan(refresh: true),
+      Provider.of<BiayaProvider>(context, listen: false)
+          .fetchBiaya(refresh: true),
+    ];
+
+    for (final task in refreshTasks) {
+      try {
+        await task;
+      } catch (e) {
+        debugPrint('Refresh setelah switch gudang gagal: $e');
+      }
+      if (!mounted) return;
+    }
+  }
+
   Widget _buildGudangSwitch() {
     final isDark = AppTheme.isDark(context);
     return Consumer<GudangProvider>(
@@ -983,11 +1022,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (!mounted) return;
                   await auth.refreshProfile();
                   if (!mounted) return;
-                  await Provider.of<DashboardProvider>(context, listen: false)
-                      .fetchDashboard();
-                  if (!mounted) return;
-                  await Provider.of<StokProvider>(context, listen: false)
-                      .fetchStok(gudangId: id);
+                  await _refreshWarehouseScopedData(id);
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
