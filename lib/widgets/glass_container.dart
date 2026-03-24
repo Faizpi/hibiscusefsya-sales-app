@@ -104,15 +104,15 @@ class GlassContainer extends StatelessWidget {
     // Glass tint color
     final glassColor = overrideColor ??
         (isDark
-            ? const Color(0xFF1E293B).withAlpha(_useFaux ? 176 : 146)
-            : Colors.white.withAlpha(_useFaux ? 214 : 182));
+        ? const Color(0xFF1A2538).withAlpha(_useFaux ? 184 : 162)
+        : const Color(0xFFF8FAFF).withAlpha(_useFaux ? 226 : 206));
 
     // Border — slightly more visible in dark mode for glass definition
     final glassBorder = overrideBorder ??
         Border.all(
           color: isDark
-              ? Colors.white.withAlpha(_useFaux ? 18 : 34)
-              : Colors.white.withAlpha(_useFaux ? 132 : 175),
+              ? Colors.white.withAlpha(_useFaux ? 20 : 36)
+              : const Color(0xFFC7D9FF).withAlpha(_useFaux ? 176 : 198),
         );
 
     // Shadow
@@ -120,10 +120,10 @@ class GlassContainer extends StatelessWidget {
         [
           BoxShadow(
             color: isDark
-                ? Colors.black.withAlpha(_useFaux ? 30 : 48)
-                : AppTheme.primaryColor.withAlpha(_useFaux ? 8 : 16),
-            blurRadius: _useFaux ? 10 : 20,
-            offset: const Offset(0, 6),
+                ? Colors.black.withAlpha(_useFaux ? 28 : 44)
+                : AppTheme.primaryColor.withAlpha(_useFaux ? 7 : 14),
+            blurRadius: _useFaux ? 8 : 16,
+            offset: const Offset(0, 4),
           ),
           if (!_useFaux)
             BoxShadow(
@@ -137,30 +137,25 @@ class GlassContainer extends StatelessWidget {
             BoxShadow(
               color: isDark
                   ? AppTheme.pinkAccent.withAlpha(8)
-                  : AppTheme.pinkAccent.withAlpha(10),
-              blurRadius: 18,
+                  : AppTheme.pinkAccent.withAlpha(8),
+              blurRadius: 14,
               offset: const Offset(0, 0),
             ),
         ];
 
     // Gradient overlay for glass depth
-    final glassGradient = isDark
-        ? LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withAlpha(_useFaux ? 7 : 12),
-              Colors.white.withAlpha(_useFaux ? 3 : 5),
-            ],
-          )
-        : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withAlpha(_useFaux ? 170 : 210),
-              Colors.white.withAlpha(_useFaux ? 110 : 145),
-            ],
-          );
+    final baseSurface = AppTheme.softBluePinkSurface(context);
+    final overlayAlpha = isDark
+        ? (_useFaux ? 38 : 52)
+        : (_useFaux ? 198 : 226);
+    final glassGradient = LinearGradient(
+      begin: baseSurface.begin,
+      end: baseSurface.end,
+      colors: baseSurface.colors
+          .map((c) => c.withAlpha(overlayAlpha))
+          .toList(),
+      stops: baseSurface.stops,
+    );
 
     Widget content = Container(
       width: width,
@@ -287,20 +282,21 @@ class GlassScaffold extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF0F172A),
-                          Color(0xFF131B2E),
-                          Color(0xFF0F172A),
+                          Color(0xFF0F1728),
+                          Color(0xFF162238),
+                          Color(0xFF1E1F34),
                         ],
+                        stops: [0.0, 0.58, 1.0],
                       )
                     : const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFFF0F5FF),
-                          Color(0xFFF8FAFC),
-                          Color(0xFFFCE7F3),
+                          Color(0xFFECF3FF),
+                          Color(0xFFF5F8FF),
+                          Color(0xFFFBEFF8),
                         ],
-                        stops: [0.0, 0.5, 1.0],
+                        stops: [0.0, 0.58, 1.0],
                       ),
               ),
             ),
@@ -317,11 +313,11 @@ class GlassScaffold extends StatelessWidget {
                 gradient: RadialGradient(
                   colors: isDark
                       ? [
-                          AppTheme.primaryColor.withAlpha(20),
+                          AppTheme.primaryColor.withAlpha(16),
                           Colors.transparent,
                         ]
                       : [
-                          AppTheme.primaryColor.withAlpha(25),
+                          AppTheme.primaryColor.withAlpha(20),
                           Colors.transparent,
                         ],
                 ),
@@ -340,11 +336,11 @@ class GlassScaffold extends StatelessWidget {
                 gradient: RadialGradient(
                   colors: isDark
                       ? [
-                          AppTheme.accentColor.withAlpha(12),
+                          AppTheme.accentColor.withAlpha(10),
                           Colors.transparent,
                         ]
                       : [
-                          AppTheme.pinkAccent.withAlpha(15),
+                          AppTheme.pinkAccent.withAlpha(14),
                           Colors.transparent,
                         ],
                 ),
@@ -380,20 +376,21 @@ class GlobalGlassBackground extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFF0B1222),
-                        Color(0xFF111A2F),
-                        Color(0xFF0E1528),
+                        Color(0xFF0D1526),
+                        Color(0xFF16243B),
+                        Color(0xFF201F36),
                       ],
+                      stops: [0.0, 0.58, 1.0],
                     )
                   : const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
                         Color(0xFFEAF2FF),
-                        Color(0xFFF8FAFC),
-                        Color(0xFFFDEDF6),
+                        Color(0xFFF5F8FF),
+                        Color(0xFFFCEEF8),
                       ],
-                      stops: [0.0, 0.55, 1.0],
+                      stops: [0.0, 0.58, 1.0],
                     ),
             ),
           ),
@@ -409,11 +406,11 @@ class GlobalGlassBackground extends StatelessWidget {
               gradient: RadialGradient(
                 colors: isDark
                     ? [
-                        AppTheme.primaryColor.withAlpha(36),
+                        AppTheme.primaryColor.withAlpha(30),
                         Colors.transparent,
                       ]
                     : [
-                        AppTheme.primaryColor.withAlpha(44),
+                        AppTheme.primaryColor.withAlpha(34),
                         Colors.transparent,
                       ],
               ),
@@ -431,11 +428,11 @@ class GlobalGlassBackground extends StatelessWidget {
               gradient: RadialGradient(
                 colors: isDark
                     ? [
-                        AppTheme.accentColor.withAlpha(22),
+                        AppTheme.accentColor.withAlpha(18),
                         Colors.transparent,
                       ]
                     : [
-                        AppTheme.pinkAccent.withAlpha(26),
+                        AppTheme.pinkAccent.withAlpha(22),
                         Colors.transparent,
                       ],
               ),

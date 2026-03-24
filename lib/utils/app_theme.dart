@@ -53,9 +53,9 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF4E7EF4),
-      Color(0xFF739FFF),
-      Color(0xFFD97FB3),
+      Color(0xFF567FE6),
+      Color(0xFF759BEA),
+      Color(0xFFC789AF),
     ],
     stops: [0.0, 0.58, 1.0],
   );
@@ -64,9 +64,9 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF4E7EF4),
-      Color(0xFF739FFF),
-      Color(0xFFD97FB3),
+      Color(0xFF567FE6),
+      Color(0xFF759BEA),
+      Color(0xFFC789AF),
     ],
     stops: [0.0, 0.58, 1.0],
   );
@@ -75,9 +75,9 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF4576EF),
-      Color(0xFF6693FA),
-      Color(0xFFC961A0),
+      Color(0xFF4F79E8),
+      Color(0xFF6F93E8),
+      Color(0xFFC274A4),
     ],
     stops: [0.0, 0.6, 1.0],
   );
@@ -636,15 +636,15 @@ class AppTheme {
 
   // ── Glass Helpers ──
   static Color glassColor(BuildContext context) => isDark(context)
-      ? const Color(0xFF1E293B).withAlpha(152)
-      : Colors.white.withAlpha(186);
+      ? const Color(0xFF1A2538).withAlpha(164)
+      : const Color(0xFFF9FBFF).withAlpha(202);
 
   static Color glassBorderColor(BuildContext context) => isDark(context)
-      ? Colors.white.withAlpha(34)
-      : const Color(0xFFBFDBFE).withAlpha(170);
+      ? Colors.white.withAlpha(36)
+      : const Color(0xFFC7D9FF).withAlpha(184);
 
   static Color glassInputFill(BuildContext context) =>
-      isDark(context) ? Colors.white.withAlpha(8) : Colors.white.withAlpha(120);
+      isDark(context) ? Colors.white.withAlpha(10) : Colors.white.withAlpha(154);
 
   static Color glassChipBg(BuildContext context) => isDark(context)
       ? Colors.white.withAlpha(10)
