@@ -283,68 +283,50 @@ class _HomeScreenState extends State<HomeScreen> {
               right: 28,
               bottom: MediaQuery.of(context).padding.bottom + 10,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(
-                    sigmaX: AppTheme.glassBlur(context, base: 24),
-                    sigmaY: AppTheme.glassBlur(context, base: 24),
+                    sigmaX: AppTheme.glassBlur(context, base: 28),
+                    sigmaY: AppTheme.glassBlur(context, base: 28),
                   ),
                   child: Container(
                     height: 58,
                     decoration: BoxDecoration(
                       color: AppTheme.glassColor(context)
-                          .withAlpha(isDark ? 142 : 176),
-                      borderRadius: BorderRadius.circular(20),
+                          .withAlpha(isDark ? 124 : 154),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: AppTheme.glassBorderColor(context)
-                            .withAlpha(isDark ? 130 : 200),
-                        width: 1.2,
+                            .withAlpha(isDark ? 100 : 150),
+                        width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 46 : 16),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
+                          color: Colors.black.withAlpha(isDark ? 42 : 14),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
                           spreadRadius: 0,
                         ),
                         BoxShadow(
-                          color: Colors.white.withAlpha(isDark ? 7 : 24),
-                          blurRadius: 16,
+                          color: Colors.white.withAlpha(isDark ? 4 : 20),
+                          blurRadius: 14,
                           offset: const Offset(0, -1),
                         ),
                       ],
                     ),
                     child: Stack(
                       children: [
-                        // Subtle top highlight for clear liquid-glass look.
+                        // Subtle top sheen.
                         Positioned(
-                          left: 8,
-                          right: 8,
-                          top: 4,
+                          left: 14,
+                          right: 14,
+                          top: 5,
                           child: IgnorePointer(
                             child: Container(
-                              height: 10,
+                              height: 8,
                               decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(isDark ? 16 : 46),
+                                color: Colors.white.withAlpha(isDark ? 14 : 34),
                                 borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Inner edge to mimic refracted glass rim.
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: Padding(
-                              padding: const EdgeInsets.all(1.2),
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(18.8),
-                                  border: Border.all(
-                                    color:
-                                        Colors.white.withAlpha(isDark ? 24 : 72),
-                                  ),
-                                ),
                               ),
                             ),
                           ),
@@ -362,28 +344,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Align(
                                 alignment: Alignment.topCenter,
                                 child: Container(
-                                  width: 34,
-                                  height: 34,
+                                  width: 32,
+                                  height: 32,
                                   decoration: BoxDecoration(
                                     color:
-                                        Colors.white.withAlpha(isDark ? 22 : 90),
+                                        Colors.white.withAlpha(isDark ? 18 : 70),
                                     shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white
-                                          .withAlpha(isDark ? 54 : 170),
-                                      width: 1,
-                                    ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.white
-                                            .withAlpha(isDark ? 10 : 38),
-                                        blurRadius: 10,
+                                            .withAlpha(isDark ? 8 : 30),
+                                        blurRadius: 12,
                                         offset: const Offset(0, -1),
                                       ),
                                       BoxShadow(
                                         color: Colors.black
-                                            .withAlpha(isDark ? 24 : 10),
-                                        blurRadius: 12,
+                                            .withAlpha(isDark ? 20 : 8),
+                                        blurRadius: 14,
                                         offset: const Offset(0, 6),
                                       ),
                                     ],
@@ -391,11 +368,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Align(
                                     alignment: const Alignment(-0.25, -0.3),
                                     child: Container(
-                                      width: 8,
-                                      height: 8,
+                                      width: 7,
+                                      height: 7,
                                       decoration: BoxDecoration(
                                         color: Colors.white
-                                            .withAlpha(isDark ? 24 : 160),
+                                            .withAlpha(isDark ? 22 : 120),
                                         shape: BoxShape.circle,
                                       ),
                                     ),
@@ -460,9 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
               duration: const Duration(milliseconds: 240),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withAlpha(isDark ? 0 : 6)
-                    : Colors.transparent,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
