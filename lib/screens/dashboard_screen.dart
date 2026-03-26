@@ -309,13 +309,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // â”€â”€ Pie Chart Section â”€â”€
+                // Pie Chart Section
                 _buildSectionTitle('Distribusi Transaksi'),
                 const SizedBox(height: 12),
                 _buildPieChart(data),
                 const SizedBox(height: 24),
 
-                // â”€â”€ Line Chart Section â”€â”€
+                // Line Chart Section
                 _buildSectionTitle('Trend Bulan Ini'),
                 const SizedBox(height: 12),
                 _buildLineChart(data),
@@ -381,7 +381,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // â”€â”€ Pie Chart â”€â”€
+  // Pie Chart
   Widget _buildPieChart(Map<String, dynamic> data) {
     final penjualan = _safeDouble(data['penjualan_bulan_ini']);
     final pembelian = _safeDouble(data['pembelian_bulan_ini']);
@@ -495,7 +495,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // â”€â”€ Line Chart â”€â”€
+  // Line Chart
   Widget _buildLineChart(Map<String, dynamic> data) {
     // Generate sample trend data from dashboard data
     final totalPenjualan = _safeDouble(data['total_penjualan_bulan_ini']);

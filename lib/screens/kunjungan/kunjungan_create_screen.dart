@@ -680,7 +680,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('â† Kembali'),
+                  child: const Text('Kembali'),
                 ),
               ),
               const SizedBox(width: 12),

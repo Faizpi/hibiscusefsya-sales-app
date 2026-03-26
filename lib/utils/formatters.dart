@@ -8,7 +8,7 @@ class Formatters {
   );
 
   static final _dateFormat = DateFormat('dd/MM/yyyy', 'id_ID');
-  static final _dateTimeFormat = DateFormat('dd/MM/yyyy | HH.mm', 'id_ID');
+  static final _dateTimeFormat = DateFormat('dd/MM/yyyy | HH:mm', 'id_ID');
 
   static String currency(dynamic amount) {
     if (amount == null) return 'Rp 0';

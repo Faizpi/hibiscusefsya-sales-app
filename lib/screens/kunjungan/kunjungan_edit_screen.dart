@@ -677,7 +677,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('â† Kembali'),
+                  child: const Text('Kembali'),
                 ),
               ),
               const SizedBox(width: 12),

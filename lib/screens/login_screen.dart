@@ -298,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Footer
                   Text(
-                    'Â© 2026 Hibiscus Efsya. All rights reserved.',
+                    '(c) 2026 Hibiscus Efsya. All rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

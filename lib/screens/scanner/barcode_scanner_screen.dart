@@ -15,7 +15,7 @@ import '../../widgets/glass_container.dart';
 /// );
 /// ```
 class BarcodeScannerScreen extends StatefulWidget {
-  /// 'produk' â†’ matches item_code, 'kontak' â†’ matches kode_kontak
+  /// 'produk' matches item_code, 'kontak' matches kode_kontak
   final String scanType;
 
   /// List of maps with 'id', 'item_code'/'kode_kontak', 'nama'/...
@@ -126,7 +126,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         }
       }
 
-      // Success â€” return item
+      // Success: return item
       Navigator.pop(context, foundItem);
     } else {
       setState(() {
