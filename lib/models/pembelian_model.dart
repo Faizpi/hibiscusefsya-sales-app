@@ -63,7 +63,7 @@ class PembelianModel {
           .toList();
     }
     return PembelianModel(
-      id: json['id'],
+      id: _parseInt(json['id']) ?? 0,
       nomor: json['nomor'],
       uuid: json['uuid'],
       tglTransaksi: json['tgl_transaksi'],
@@ -80,14 +80,27 @@ class PembelianModel {
       diskonAkhir: _parseNum(json['diskon_akhir']),
       taxPercentage: _parseNum(json['tax_percentage']),
       grandTotal: _parseNum(json['grand_total']),
-      userId: json['user_id'],
-      gudangId: json['gudang_id'],
+      userId: _parseInt(json['user_id']),
+      approverId: _parseInt(json['approver_id']),
+      gudangId: _parseInt(json['gudang_id']),
       user: json['user'],
       gudang: json['gudang'],
       approver: json['approver'],
       items: items,
       lampiranPaths: _parseLampiranPaths(json['lampiran_paths']),
     );
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final s = value.trim();
+      if (s.isEmpty) return null;
+      return int.tryParse(s);
+    }
+    return null;
   }
 
   static List<String>? _parseLampiranPaths(dynamic raw) {
@@ -172,9 +185,9 @@ class PembelianItemModel {
     }
 
     return PembelianItemModel(
-      id: json['id'],
-      pembelianId: json['pembelian_id'],
-      produkId: json['produk_id'],
+      id: _parseInt(json['id']),
+      pembelianId: _parseInt(json['pembelian_id']),
+      produkId: _parseInt(json['produk_id']),
       namaProduk: json['nama_produk'] ?? json['produk']?['nama_produk'],
       kuantitas: qty,
       satuan: json['satuan'] ?? json['unit'],
@@ -187,6 +200,18 @@ class PembelianItemModel {
       expiredDate: json['expired_date'],
       produk: json['produk'],
     );
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final s = value.trim();
+      if (s.isEmpty) return null;
+      return int.tryParse(s);
+    }
+    return null;
   }
 
   static num? _parseNum(dynamic value) {
