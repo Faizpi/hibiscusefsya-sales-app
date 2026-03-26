@@ -57,9 +57,14 @@ class Formatters {
     if (s.isEmpty) return null;
 
     // Normalize common backend timezone variants to RFC3339-compatible forms.
+    s = s.replaceFirst(RegExp(r'\s+00Z$'), 'Z');
+    s = s.replaceFirst(RegExp(r'\s+00:00$'), '+00:00');
+    s = s.replaceFirst(RegExp(r'\s+0000$'), '+0000');
     s = s.replaceFirst(RegExp(r'\s+Z$'), 'Z');
-    s = s.replaceFirst(RegExp(r'([+-]\d{2})(\d{2})$'), r'$1:$2');
-    s = s.replaceFirst(RegExp(r'\s+([+-]\d{2}:\d{2})$'), r'$1');
+    s = s.replaceFirstMapped(RegExp(r'([+-]\d{2})(\d{2})$'),
+      (m) => '${m.group(1)}:${m.group(2)}');
+    s = s.replaceFirstMapped(
+      RegExp(r'\s+([+-]\d{2}:\d{2})$'), (m) => m.group(1)!);
 
     // Clamp fractional seconds to max 6 digits for Dart parser compatibility.
     final frac = RegExp(r'\.(\d{7,})');
