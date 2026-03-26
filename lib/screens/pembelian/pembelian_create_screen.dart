@@ -68,6 +68,16 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
   void _addItem() => setState(() => _items.add(_ItemRow()));
   void _removeItem(int i) => setState(() => _items.removeAt(i));
 
+  void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
+    row.produk = produk;
+    row.harga = (produk?.harga ?? 0).toDouble();
+    if (produk == null) return;
+    row.unitController.text = (produk.satuan?.trim().isNotEmpty == true)
+        ? produk.satuan!.trim()
+        : 'Pcs';
+    row.deskripsiController.text = (produk.deskripsi ?? '').trim();
+  }
+
   Future<void> _applyUserGudangRule() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     final fixedGudangId = user?.currentGudangId ?? user?.gudangId;
@@ -147,10 +157,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
           orElse: () => null,
         );
     if (matched == null) return;
-    setState(() {
-      _items[rowIndex].produk = matched;
-      _items[rowIndex].harga = (matched.harga ?? 0).toDouble();
-    });
+    setState(() => _applySelectedProdukToRow(_items[rowIndex], matched));
   }
 
   String _produkSearchLabel(ProdukModel p) {
@@ -501,8 +508,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                                 items: produks,
                                 itemAsString: _produkSearchLabel,
                                 onChanged: (v) => setState(() {
-                                  _items[i].produk = v;
-                                  _items[i].harga = (v?.harga ?? 0).toDouble();
+                                  _applySelectedProdukToRow(_items[i], v);
                                 }),
                               ),
                             ),

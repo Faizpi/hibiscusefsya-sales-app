@@ -35,6 +35,76 @@ class LampiranSection extends StatelessWidget {
     return Icons.attach_file_rounded;
   }
 
+  String _publicStorageUrl(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    final normalized = path.replaceAll('\\', '/');
+    final encoded = normalized
+        .split('/')
+        .where((segment) => segment.isNotEmpty)
+        .map(Uri.encodeComponent)
+        .join('/');
+    return '$baseUrl/storage/$encoded';
+  }
+
+  void _openImagePreview(BuildContext context, String imageUrl, String name) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                minScale: 0.7,
+                maxScale: 4,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Gagal memuat gambar lampiran.'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(999),
+                child: IconButton(
+                  tooltip: 'Tutup',
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (paths.isEmpty) return const SizedBox.shrink();
@@ -57,6 +127,7 @@ class LampiranSection extends StatelessWidget {
           final name = _fileName(path);
           final icon = _fileIcon(path);
           final isImg = _isImage(path);
+          final imageUrl = _publicStorageUrl(path);
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -69,23 +140,26 @@ class LampiranSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isImg)
-                  ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(12)),
-                    child: Image.network(
-                      '$baseUrl/api/v1/lampiran/preview?path=$path',
-                      width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 80,
-                        color: isDark
-                            ? Colors.white.withAlpha(8)
-                            : AppTheme.bgSecondary,
-                        child: Center(
-                          child: Icon(Icons.broken_image_rounded,
-                              color: AppTheme.textTertiaryColor(context),
-                              size: 32),
+                  GestureDetector(
+                    onTap: () => _openImagePreview(context, imageUrl, name),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(12)),
+                      child: Image.network(
+                        imageUrl,
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 80,
+                          color: isDark
+                              ? Colors.white.withAlpha(8)
+                              : AppTheme.bgSecondary,
+                          child: Center(
+                            child: Icon(Icons.broken_image_rounded,
+                                color: AppTheme.textTertiaryColor(context),
+                                size: 32),
+                          ),
                         ),
                       ),
                     ),

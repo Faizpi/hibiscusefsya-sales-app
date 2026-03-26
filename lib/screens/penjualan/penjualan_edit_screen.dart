@@ -73,12 +73,20 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
 
     if (d.items != null) {
       for (final item in d.items!) {
-        _items.add(_ItemRow()
+        final row = _ItemRow()
           ..produkId = item.produkId
           ..namaProduk = item.namaProduk
           ..qty = item.kuantitas.toDouble()
           ..harga = item.hargaSatuan.toDouble()
-          ..diskon = item.diskon.toDouble());
+          ..diskon = item.diskon.toDouble();
+        row.deskripsiController.text = (item.deskripsi ?? '').trim();
+        row.unitController.text =
+            (item.unit ?? item.satuan ?? 'Pcs').toString().trim();
+        row.batchController.text = (item.batchNumber ?? '').trim();
+        if (item.expiredDate != null && item.expiredDate!.isNotEmpty) {
+          row.expDate = DateTime.tryParse(item.expiredDate!);
+        }
+        _items.add(row);
       }
     }
 
@@ -127,6 +135,17 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     final value = _tipeHarga.trim().toLowerCase();
     if (value == 'grosir') return 'grosir';
     return 'retail';
+  }
+
+  void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
+    row.produk = produk;
+    row.produkId = produk?.id;
+    row.harga = _resolvedHargaForProduk(produk);
+    if (produk == null) return;
+    row.unitController.text = (produk.satuan?.trim().isNotEmpty == true)
+        ? produk.satuan!.trim()
+        : 'Pcs';
+    row.deskripsiController.text = (produk.deskripsi ?? '').trim();
   }
 
   String _kontakSearchLabel(KontakModel k) {
@@ -226,9 +245,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     if (matched == null) return;
 
     setState(() {
-      _items[rowIndex].produk = matched;
-      _items[rowIndex].produkId = matched.id;
-      _items[rowIndex].harga = (matched.harga ?? 0).toDouble();
+      _applySelectedProdukToRow(_items[rowIndex], matched);
     });
   }
 
@@ -704,9 +721,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                                     itemAsString: _produkSearchLabel,
                                     onChanged: (v) {
                                       setState(() {
-                                        item.produk = v;
-                                        item.produkId = v?.id;
-                                        item.harga = _resolvedHargaForProduk(v);
+                                        _applySelectedProdukToRow(item, v);
                                       });
                                     },
                                   ),

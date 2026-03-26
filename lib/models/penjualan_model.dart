@@ -137,6 +137,10 @@ class PenjualanItemModel {
   final num hargaSatuan;
   final num diskon;
   final num total;
+  final String? deskripsi;
+  final String? unit;
+  final String? batchNumber;
+  final String? expiredDate;
   final Map<String, dynamic>? produk;
 
   PenjualanItemModel({
@@ -149,6 +153,10 @@ class PenjualanItemModel {
     required this.hargaSatuan,
     required this.diskon,
     required this.total,
+    this.deskripsi,
+    this.unit,
+    this.batchNumber,
+    this.expiredDate,
     this.produk,
   });
 
@@ -178,6 +186,10 @@ class PenjualanItemModel {
       hargaSatuan: harga,
       diskon: disk,
       total: parsedTotal,
+      deskripsi: json['deskripsi'],
+      unit: json['unit'] ?? json['satuan'],
+      batchNumber: json['batch_number'],
+      expiredDate: json['expired_date'],
       produk: json['produk'],
     );
   }

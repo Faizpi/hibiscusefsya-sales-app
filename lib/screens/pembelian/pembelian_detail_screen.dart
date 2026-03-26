@@ -204,7 +204,7 @@ class _PembelianDetailScreenState extends State<PembelianDetailScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} Ã— ${Formatters.currency(item.hargaSatuan)}',
+                                  '${item.kuantitas} ${item.unit ?? item.satuan ?? 'Pcs'} x ${Formatters.currency(item.hargaSatuan)}',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: AppTheme.textSecondaryColor(
@@ -220,6 +220,24 @@ class _PembelianDetailScreenState extends State<PembelianDetailScreen> {
                           Text('Diskon: ${item.diskon}%',
                               style: TextStyle(
                                   color: Colors.red[400], fontSize: 12)),
+                        if (item.batchNumber != null &&
+                            item.batchNumber!.isNotEmpty)
+                          Text('Batch: ${item.batchNumber}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor(context))),
+                        if (item.expiredDate != null &&
+                            item.expiredDate!.isNotEmpty)
+                          Text('Expired: ${Formatters.date(item.expiredDate)}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor(context))),
+                        if (item.deskripsi != null &&
+                            item.deskripsi!.isNotEmpty)
+                          Text('Ket: ${item.deskripsi}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textTertiaryColor(context))),
                       ],
                     ),
                   ),

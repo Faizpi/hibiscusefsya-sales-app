@@ -119,7 +119,9 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
       row.diskon = _defaultKontakDiskonPersen;
     }
     if (produk == null) return;
-    row.unitController.text = (produk.satuan ?? '').trim();
+    row.unitController.text = (produk.satuan?.trim().isNotEmpty == true)
+        ? produk.satuan!.trim()
+        : 'Pcs';
     row.deskripsiController.text = (produk.deskripsi ?? '').trim();
   }
 

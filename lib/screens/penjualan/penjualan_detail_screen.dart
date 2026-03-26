@@ -239,7 +239,7 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                  '${item.kuantitas} ${item.satuan ?? 'pcs'} Ã— ${Formatters.currency(item.hargaSatuan)}',
+                                  '${item.kuantitas} ${item.unit ?? item.satuan ?? 'Pcs'} x ${Formatters.currency(item.hargaSatuan)}',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: AppTheme.textSecondaryColor(
@@ -255,19 +255,21 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                           Text('Diskon: ${item.diskon}%',
                               style: TextStyle(
                                   color: Colors.red[400], fontSize: 12)),
-                        if (item.produk?['batch_number'] != null)
-                          Text('Batch: ${item.produk!['batch_number']}',
+                        if (item.batchNumber != null &&
+                            item.batchNumber!.isNotEmpty)
+                          Text('Batch: ${item.batchNumber}',
                               style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.textSecondaryColor(context))),
-                        if (item.produk?['expired_date'] != null)
-                          Text('Expired: ${item.produk!['expired_date']}',
+                        if (item.expiredDate != null &&
+                            item.expiredDate!.isNotEmpty)
+                          Text('Expired: ${Formatters.date(item.expiredDate)}',
                               style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.textSecondaryColor(context))),
-                        if (item.produk?['deskripsi'] != null &&
-                            item.produk!['deskripsi'].toString().isNotEmpty)
-                          Text('Ket: ${item.produk!['deskripsi']}',
+                        if (item.deskripsi != null &&
+                            item.deskripsi!.isNotEmpty)
+                          Text('Ket: ${item.deskripsi}',
                               style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.textTertiaryColor(context))),

@@ -68,11 +68,15 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
 
     if (d.items != null) {
       for (final item in d.items!) {
-        _items.add(_ItemRow()
+        final row = _ItemRow()
           ..produkId = item.produkId
           ..qty = (item.kuantitas ?? 0).toDouble()
           ..harga = (item.hargaSatuan ?? 0).toDouble()
-          ..diskon = (item.diskon ?? 0).toDouble());
+          ..diskon = (item.diskon ?? 0).toDouble();
+        row.deskripsiController.text = (item.deskripsi ?? '').trim();
+        row.unitController.text =
+            (item.unit ?? item.satuan ?? 'Pcs').toString().trim();
+        _items.add(row);
       }
     }
 
@@ -96,6 +100,17 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
 
   void _addItem() => setState(() => _items.add(_ItemRow()));
   void _removeItem(int i) => setState(() => _items.removeAt(i));
+
+  void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
+    row.produk = produk;
+    row.produkId = produk?.id;
+    row.harga = (produk?.harga ?? 0).toDouble();
+    if (produk == null) return;
+    row.unitController.text = (produk.satuan?.trim().isNotEmpty == true)
+        ? produk.satuan!.trim()
+        : 'Pcs';
+    row.deskripsiController.text = (produk.deskripsi ?? '').trim();
+  }
 
   Future<void> _applyUserGudangRule() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
@@ -176,11 +191,7 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
           orElse: () => null,
         );
     if (matched == null) return;
-    setState(() {
-      _items[rowIndex].produk = matched;
-      _items[rowIndex].produkId = matched.id;
-      _items[rowIndex].harga = (matched.harga ?? 0).toDouble();
-    });
+    setState(() => _applySelectedProdukToRow(_items[rowIndex], matched));
   }
 
   String _produkSearchLabel(ProdukModel p) {
@@ -508,9 +519,7 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
                                 items: produks,
                                 itemAsString: _produkSearchLabel,
                                 onChanged: (v) => setState(() {
-                                  item.produk = v;
-                                  item.produkId = v?.id;
-                                  item.harga = (v?.harga ?? 0).toDouble();
+                                  _applySelectedProdukToRow(item, v);
                                 }),
                               ),
                             ),

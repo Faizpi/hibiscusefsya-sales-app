@@ -124,6 +124,7 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
 
   Widget _buildContent() {
     final d = _data!;
+    final derivedTipeStok = _deriveTipeStok(d.tujuan);
     return RefreshIndicator(
       onRefresh: _loadDetail,
       child: ListView(
@@ -202,7 +203,8 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
                           const SizedBox(height: 4),
                           Row(children: [
                             Flexible(
-                              child: Text('Qty: ${item.kuantitas}',
+                              child: Text(
+                                  'Qty: ${item.kuantitas ?? 0} ${item.produk?.satuan ?? 'Pcs'}',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color:
@@ -210,14 +212,16 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
                                   overflow: TextOverflow.ellipsis),
                             ),
                             const SizedBox(width: 16),
-                            Flexible(
-                              child: Text('Tipe: ${item.tipeStok ?? '-'}',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color:
-                                          AppTheme.textSecondaryColor(context)),
-                                  overflow: TextOverflow.ellipsis),
-                            ),
+                            if ((item.tipeStok ?? derivedTipeStok) != null)
+                              Flexible(
+                                child: Text(
+                                    'Tipe: ${item.tipeStok ?? derivedTipeStok}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppTheme.textSecondaryColor(
+                                            context)),
+                                    overflow: TextOverflow.ellipsis),
+                              ),
                           ]),
                           if (item.keterangan != null &&
                               item.keterangan!.isNotEmpty)
@@ -236,6 +240,13 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
         ],
       ),
     );
+  }
+
+  String? _deriveTipeStok(String? tujuan) {
+    if (tujuan == null) return null;
+    if (tujuan == 'Promo Gratis') return 'gratis';
+    if (tujuan == 'Promo Sample') return 'sample';
+    return null;
   }
 
   Future<void> _handleAction(String action) async {

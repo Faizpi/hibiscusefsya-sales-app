@@ -136,8 +136,8 @@ class KunjunganItemModel {
       kunjunganId: json['kunjungan_id'],
       produkId: json['produk_id'],
       namaProduk: json['nama_produk'],
-      kuantitas: json['kuantitas'],
-      tipeStok: json['tipe_stok'],
+      kuantitas: json['kuantitas'] ?? json['jumlah'],
+      tipeStok: json['tipe_stok'] ?? json['stock_type'],
       keterangan: json['keterangan'],
       produk:
           json['produk'] != null ? ProdukModel.fromJson(json['produk']) : null,
