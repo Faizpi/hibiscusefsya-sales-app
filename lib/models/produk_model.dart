@@ -50,8 +50,12 @@ class ProdukModel {
       id: _parseInt(json['id']),
       namaProduk: json['nama_produk'] ?? '',
       itemCode: json['item_code'],
-      harga: _parseNum(json['harga']),
-      hargaGrosir: _parseNum(json['harga_grosir']),
+      harga: _parseNum(
+        json['harga'] ?? json['harga_retail'] ?? json['harga_jual'],
+      ),
+      hargaGrosir: _parseNum(
+        json['harga_grosir'] ?? json['harga_grosir_jual'],
+      ),
       satuan: json['satuan'],
       deskripsi: json['deskripsi'],
     );

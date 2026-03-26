@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
@@ -105,9 +106,18 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     return (produk.harga ?? produk.hargaGrosir ?? 0).toDouble();
   }
 
+  String _resolvedTipeHargaForApi() {
+    final value = _tipeHarga.trim().toLowerCase();
+    if (value == 'grosir') return 'grosir';
+    return 'retail';
+  }
+
   void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
     row.produk = produk;
     row.harga = _resolvedHargaForProduk(produk);
+    if (_defaultKontakDiskonPersen > 0 && row.diskon == 0) {
+      row.diskon = _defaultKontakDiskonPersen;
+    }
     if (produk == null) return;
     row.unitController.text = (produk.satuan ?? '').trim();
     row.deskripsiController.text = (produk.deskripsi ?? '').trim();
@@ -335,7 +345,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             : null,
         'tgl_transaksi': _tglTransaksi.toIso8601String().split('T')[0],
         'syarat_pembayaran': _syaratPembayaran,
-        'tipe_harga': _tipeHarga,
+        'tipe_harga': _resolvedTipeHargaForApi(),
         'gudang_id': _gudangId,
         'no_referensi': _noReferensiController.text.isNotEmpty
             ? _noReferensiController.text
@@ -822,8 +832,11 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                     decoration: const InputDecoration(
                                         labelText: 'Qty', isDense: true),
                                     keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
                                     onChanged: (v) => setState(() {
-                                      _items[i].qty = double.tryParse(v) ?? 0;
+                                      _items[i].qty = int.tryParse(v) ?? 0;
                                     }),
                                   ),
                                 ),
@@ -1023,7 +1036,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
 
 class _ItemRow {
   ProdukModel? produk;
-  double qty = 1;
+  int qty = 1;
   double harga = 0;
   double diskon = 0;
   DateTime? expDate;
