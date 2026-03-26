@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class PenjualanModel {
   final int id;
   final String? nomor;
@@ -89,10 +91,29 @@ class PenjualanModel {
       gudang: json['gudang'],
       approver: json['approver'],
       items: items,
-      lampiranPaths: json['lampiran_paths'] != null
-          ? List<String>.from(json['lampiran_paths'])
-          : null,
+      lampiranPaths: _parseLampiranPaths(json['lampiran_paths']),
     );
+  }
+
+  static List<String>? _parseLampiranPaths(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    if (raw is String) {
+      final text = raw.trim();
+      if (text.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(text);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toList();
+        }
+      } catch (_) {
+        // Ignore malformed payload and fallback to empty list.
+      }
+      return const [];
+    }
+    return null;
   }
 
   static num? _parseNum(dynamic value) {
