@@ -114,6 +114,21 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
   void _addItem() => setState(() => _items.add(_ItemRow()));
   void _removeItem(int i) => setState(() => _items.removeAt(i));
 
+  double _resolvedHargaForProduk(ProdukModel? produk) {
+    if (produk == null) return 0;
+    final tipeHarga = _tipeHarga.trim().toLowerCase();
+    if (tipeHarga == 'grosir') {
+      return (produk.hargaGrosir ?? produk.harga ?? 0).toDouble();
+    }
+    return (produk.harga ?? produk.hargaGrosir ?? 0).toDouble();
+  }
+
+  String _resolvedTipeHargaForApi() {
+    final value = _tipeHarga.trim().toLowerCase();
+    if (value == 'grosir') return 'grosir';
+    return 'retail';
+  }
+
   String _kontakSearchLabel(KontakModel k) {
     final code = (k.kodeKontak ?? '').trim();
     final telp = (k.noTelp ?? '').trim();
@@ -287,7 +302,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
             : null,
         'tgl_transaksi': _tglTransaksi.toIso8601String().split('T')[0],
         'syarat_pembayaran': _syaratPembayaran,
-        'tipe_harga': _tipeHarga,
+        'tipe_harga': _resolvedTipeHargaForApi(),
         'gudang_id': _gudangId,
         'no_referensi': _noReferensiController.text.isNotEmpty
             ? _noReferensiController.text
@@ -516,7 +531,14 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _tipeHarga = 'Retail'),
+                    onTap: () => setState(() {
+                      _tipeHarga = 'Retail';
+                      for (final item in _items) {
+                        if (item.produk != null) {
+                          item.harga = _resolvedHargaForProduk(item.produk);
+                        }
+                      }
+                    }),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -542,7 +564,14 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _tipeHarga = 'Grosir'),
+                    onTap: () => setState(() {
+                      _tipeHarga = 'Grosir';
+                      for (final item in _items) {
+                        if (item.produk != null) {
+                          item.harga = _resolvedHargaForProduk(item.produk);
+                        }
+                      }
+                    }),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -677,7 +706,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                                       setState(() {
                                         item.produk = v;
                                         item.produkId = v?.id;
-                                        item.harga = (v?.harga ?? 0).toDouble();
+                                        item.harga = _resolvedHargaForProduk(v);
                                       });
                                     },
                                   ),
