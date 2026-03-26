@@ -51,6 +51,10 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
       Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       _applyUserGudangRule();
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      if (user != null && _tagController.text.trim().isEmpty) {
+        _tagController.text = user.name;
+      }
     });
   }
 
@@ -216,6 +220,48 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
       );
       return;
     }
+
+    final selectedItems = _items.where((i) => i.produk != null).toList();
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih minimal 1 produk pada item.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    for (final item in selectedItems) {
+      if (item.qty <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Qty item harus lebih dari 0.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (item.harga < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Harga item tidak boleh negatif.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (item.unitController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unit item wajib diisi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isSubmitting = true);
     try {
       final provider = Provider.of<PembelianProvider>(context, listen: false);
@@ -239,8 +285,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
         'tax_percentage': _taxPercentage,
         'diskon_akhir': _diskonAkhir,
         'memo': _memoController.text,
-        'items': _items
-            .where((i) => i.produk != null)
+        'items': selectedItems
             .map((i) => {
                   'produk_id': i.produk!.id,
                   'kuantitas': i.qty,
@@ -558,6 +603,8 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                             Expanded(
                                 flex: 2,
                                 child: TextFormField(
+                                key: ValueKey(
+                                  'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
                                     initialValue: _items[i].harga.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),

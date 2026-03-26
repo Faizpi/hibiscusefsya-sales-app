@@ -860,6 +860,8 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: TextFormField(
+                                    key: ValueKey(
+                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
                                     initialValue: _items[i].harga.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),

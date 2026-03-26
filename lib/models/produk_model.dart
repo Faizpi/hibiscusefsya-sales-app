@@ -71,7 +71,16 @@ class ProdukModel {
   static num? _parseNum(dynamic value) {
     if (value == null) return null;
     if (value is num) return value;
-    if (value is String) return num.tryParse(value);
+    if (value is String) {
+      final s = value.trim();
+      if (s.isEmpty) return null;
+
+      // Be tolerant with backend number formatting like "10,000" or "10,5".
+      final normalized = s.contains(',')
+          ? (s.contains('.') ? s.replaceAll(',', '') : s.replaceAll(',', '.'))
+          : s;
+      return num.tryParse(normalized);
+    }
     return null;
   }
 }
