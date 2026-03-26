@@ -1,14 +1,52 @@
 import 'package:intl/intl.dart';
 
 class Formatters {
-  static final _currencyFormat = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
+  static NumberFormat? _currencyFormatCached;
+  static DateFormat? _dateFormatCached;
+  static DateFormat? _dateTimeFormatCached;
 
-  static final _dateFormat = DateFormat('dd/MM/yyyy', 'id_ID');
-  static final _dateTimeFormat = DateFormat('dd/MM/yyyy | HH:mm', 'id_ID');
+  static NumberFormat get _currencyFormat {
+    return _currencyFormatCached ??= _buildCurrencyFormat();
+  }
+
+  static DateFormat get _dateFormat {
+    return _dateFormatCached ??= _buildDateFormat();
+  }
+
+  static DateFormat get _dateTimeFormat {
+    return _dateTimeFormatCached ??= _buildDateTimeFormat();
+  }
+
+  static NumberFormat _buildCurrencyFormat() {
+    try {
+      return NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+    } catch (_) {
+      return NumberFormat.currency(
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+    }
+  }
+
+  static DateFormat _buildDateFormat() {
+    try {
+      return DateFormat('dd/MM/yyyy', 'id_ID');
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy');
+    }
+  }
+
+  static DateFormat _buildDateTimeFormat() {
+    try {
+      return DateFormat('dd/MM/yyyy | HH:mm', 'id_ID');
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy | HH:mm');
+    }
+  }
 
   static String currency(dynamic amount) {
     if (amount == null) return 'Rp 0';
@@ -27,7 +65,11 @@ class Formatters {
       final raw = dateStr.toString().trim();
       return raw.isEmpty ? '-' : raw;
     }
-    return _dateFormat.format(parsed);
+    try {
+      return _dateFormat.format(parsed);
+    } catch (_) {
+      return '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year.toString().padLeft(4, '0')}';
+    }
   }
 
   static String dateTime(dynamic dateStr) {
@@ -37,7 +79,13 @@ class Formatters {
       final raw = dateStr.toString().trim();
       return raw.isEmpty ? '-' : raw;
     }
-    return _dateTimeFormat.format(parsed);
+    try {
+      return _dateTimeFormat.format(parsed);
+    } catch (_) {
+      final d = '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year.toString().padLeft(4, '0')}';
+      final t = '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
+      return '$d | $t';
+    }
   }
 
   static String dateOnly(dynamic dateStr) {
@@ -61,10 +109,10 @@ class Formatters {
     s = s.replaceFirst(RegExp(r'\s+00:00$'), '+00:00');
     s = s.replaceFirst(RegExp(r'\s+0000$'), '+0000');
     s = s.replaceFirst(RegExp(r'\s+Z$'), 'Z');
-    s = s.replaceFirstMapped(RegExp(r'([+-]\d{2})(\d{2})$'),
-      (m) => '${m.group(1)}:${m.group(2)}');
     s = s.replaceFirstMapped(
-      RegExp(r'\s+([+-]\d{2}:\d{2})$'), (m) => m.group(1)!);
+        RegExp(r'([+-]\d{2})(\d{2})$'), (m) => '${m.group(1)}:${m.group(2)}');
+    s = s.replaceFirstMapped(
+        RegExp(r'\s+([+-]\d{2}:\d{2})$'), (m) => m.group(1)!);
 
     // Clamp fractional seconds to max 6 digits for Dart parser compatibility.
     final frac = RegExp(r'\.(\d{7,})');
@@ -90,6 +138,10 @@ class Formatters {
     } else if (amount >= 1000) {
       return 'Rp ${(amount / 1000).toStringAsFixed(0)}Rb';
     }
-    return _currencyFormat.format(amount);
+    try {
+      return _currencyFormat.format(amount);
+    } catch (_) {
+      return 'Rp ${amount.toStringAsFixed(0)}';
+    }
   }
 }
