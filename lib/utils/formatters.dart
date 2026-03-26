@@ -21,39 +21,59 @@ class Formatters {
   }
 
   static String date(dynamic dateStr) {
-    if (dateStr == null) return '-';
-    final s = dateStr.toString().trim();
-    if (s.isEmpty) return '-';
-    try {
-      final dt = DateTime.parse(s).toLocal();
-      if (s.contains('T') || s.contains(' ')) {
-        return _dateTimeFormat.format(dt);
-      }
-      return _dateFormat.format(dt);
-    } catch (_) {
-      return s;
+    final parsed = _tryParseDate(dateStr);
+    if (parsed == null) {
+      if (dateStr == null) return '-';
+      final raw = dateStr.toString().trim();
+      return raw.isEmpty ? '-' : raw;
     }
+    return _dateFormat.format(parsed);
   }
 
   static String dateTime(dynamic dateStr) {
-    if (dateStr == null) return '-';
-    final s = dateStr.toString().trim();
-    if (s.isEmpty) return '-';
-    try {
-      return _dateTimeFormat.format(DateTime.parse(s).toLocal());
-    } catch (_) {
-      return s;
+    final parsed = _tryParseDate(dateStr);
+    if (parsed == null) {
+      if (dateStr == null) return '-';
+      final raw = dateStr.toString().trim();
+      return raw.isEmpty ? '-' : raw;
     }
+    return _dateTimeFormat.format(parsed);
   }
 
   static String dateOnly(dynamic dateStr) {
-    if (dateStr == null) return '-';
-    final s = dateStr.toString().trim();
-    if (s.isEmpty) return '-';
+    final parsed = _tryParseDate(dateStr);
+    if (parsed == null) {
+      if (dateStr == null) return '-';
+      final raw = dateStr.toString().trim();
+      return raw.isEmpty ? '-' : raw;
+    }
+    return _dateFormat.format(parsed);
+  }
+
+  static DateTime? _tryParseDate(dynamic input) {
+    if (input == null) return null;
+
+    var s = input.toString().trim();
+    if (s.isEmpty) return null;
+
+    // Normalize common backend timezone variants to RFC3339-compatible forms.
+    s = s.replaceFirst(RegExp(r'\s+Z$'), 'Z');
+    s = s.replaceFirst(RegExp(r'([+-]\d{2})(\d{2})$'), r'$1:$2');
+    s = s.replaceFirst(RegExp(r'\s+([+-]\d{2}:\d{2})$'), r'$1');
+
+    // Clamp fractional seconds to max 6 digits for Dart parser compatibility.
+    final frac = RegExp(r'\.(\d{7,})');
+    if (frac.hasMatch(s)) {
+      s = s.replaceFirstMapped(frac, (m) {
+        final digits = m.group(1)!;
+        return '.${digits.substring(0, 6)}';
+      });
+    }
+
     try {
-      return _dateFormat.format(DateTime.parse(s).toLocal());
+      return DateTime.parse(s).toLocal();
     } catch (_) {
-      return s;
+      return null;
     }
   }
 
