@@ -265,6 +265,11 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
     setState(() => _isSubmitting = true);
     try {
       final provider = Provider.of<PembelianProvider>(context, listen: false);
+      final loginName =
+        Provider.of<AuthProvider>(context, listen: false).user?.name;
+      final resolvedTag = _tagController.text.trim().isNotEmpty
+        ? _tagController.text.trim()
+        : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
       final data = {
         'tgl_transaksi': _tglTransaksi.toIso8601String().split('T')[0],
         'syarat_pembayaran': _syaratPembayaran,
@@ -281,7 +286,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
         'koordinat': _koordinatController.text.isNotEmpty
             ? _koordinatController.text
             : null,
-        'tag': _tagController.text.isNotEmpty ? _tagController.text : null,
+        'tag': resolvedTag,
         'tax_percentage': _taxPercentage,
         'diskon_akhir': _diskonAkhir,
         'memo': _memoController.text,
@@ -447,9 +452,12 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
             // Tag (Pembuat)
             TextFormField(
               controller: _tagController,
+              readOnly: true,
+              enableInteractiveSelection: false,
               decoration: const InputDecoration(
                 labelText: 'Tag (Pembuat)',
                 prefixIcon: Icon(Icons.label_outline, size: 20),
+                helperText: 'Otomatis dari akun login',
               ),
             ),
             const SizedBox(height: 12),
@@ -603,8 +611,8 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                             Expanded(
                                 flex: 2,
                                 child: TextFormField(
-                                key: ValueKey(
-                                  'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
+                                    key: ValueKey(
+                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
                                     initialValue: _items[i].harga.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),
