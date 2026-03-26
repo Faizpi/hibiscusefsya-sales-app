@@ -20,6 +20,53 @@ class _StokLogScreenState extends State<StokLogScreen> {
   DateTime? _tanggalDari;
   DateTime? _tanggalSampai;
 
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    final s = value.toString().trim();
+    if (s.isEmpty) return 0;
+
+    final direct = int.tryParse(s);
+    if (direct != null) return direct;
+
+    final normalized = s.replaceAll(',', '.');
+    final asNum = num.tryParse(normalized);
+    if (asNum != null) return asNum.toInt();
+
+    final digitsOnly = s.replaceAll(RegExp(r'[^0-9-]'), '');
+    return int.tryParse(digitsOnly) ?? 0;
+  }
+
+  dynamic _firstPresent(Map<String, dynamic> log, List<String> keys) {
+    for (final key in keys) {
+      if (log.containsKey(key) && log[key] != null) {
+        return log[key];
+      }
+    }
+    return null;
+  }
+
+  int _stokSebelum(Map<String, dynamic> log) {
+    return _toInt(_firstPresent(log, [
+      'stok_sebelum',
+      'stokSebelum',
+      'stok_awal',
+      'before_stock',
+    ]));
+  }
+
+  int _stokSesudah(Map<String, dynamic> log) {
+    return _toInt(_firstPresent(log, [
+      'stok_sesudah',
+      'stok_setelah',
+      'stokSesudah',
+      'stok_akhir',
+      'after_stock',
+    ]));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -165,9 +212,15 @@ class _StokLogScreenState extends State<StokLogScreen> {
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
                     itemCount: provider.logData.length,
                     itemBuilder: (ctx, i) {
-                      final log = provider.logData[i];
-                      final selisih = (log['stok_setelah'] ?? 0) -
-                          (log['stok_sebelum'] ?? 0);
+                      final raw = provider.logData[i];
+                      final log = raw is Map
+                        ? Map<String, dynamic>.from(raw)
+                        : <String, dynamic>{};
+                      final stokSebelum = _stokSebelum(log);
+                      final stokSesudah = _stokSesudah(log);
+                      final selisih = _toInt(log['selisih']) != 0
+                        ? _toInt(log['selisih'])
+                        : stokSesudah - stokSebelum;
                       final isPositive = selisih >= 0;
 
                       return Card(
@@ -218,12 +271,10 @@ class _StokLogScreenState extends State<StokLogScreen> {
                                 runSpacing: 4,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  _LogChip(
-                                      'Sebelum: ${log['stok_sebelum'] ?? 0}'),
+                                  _LogChip('Sebelum: $stokSebelum'),
                                   const Icon(Icons.arrow_forward,
                                       size: 14, color: AppTheme.textSecondary),
-                                  _LogChip(
-                                      'Sesudah: ${log['stok_setelah'] ?? 0}'),
+                                  _LogChip('Sesudah: $stokSesudah'),
                                 ],
                               ),
                               const SizedBox(height: 6),
