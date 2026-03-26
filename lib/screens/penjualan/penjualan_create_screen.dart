@@ -97,6 +97,22 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     });
   }
 
+  double _resolvedHargaForProduk(ProdukModel? produk) {
+    if (produk == null) return 0;
+    if (_tipeHarga == 'Grosir') {
+      return (produk.hargaGrosir ?? produk.harga ?? 0).toDouble();
+    }
+    return (produk.harga ?? produk.hargaGrosir ?? 0).toDouble();
+  }
+
+  void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
+    row.produk = produk;
+    row.harga = _resolvedHargaForProduk(produk);
+    if (produk == null) return;
+    row.unitController.text = (produk.satuan ?? '').trim();
+    row.deskripsiController.text = (produk.deskripsi ?? '').trim();
+  }
+
   String _kontakSearchLabel(KontakModel k) {
     final code = (k.kodeKontak ?? '').trim();
     final telp = (k.noTelp ?? '').trim();
@@ -201,8 +217,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     if (matched == null) return;
 
     setState(() {
-      _items[rowIndex].produk = matched;
-      _items[rowIndex].harga = (matched.harga ?? 0).toDouble();
+      _applySelectedProdukToRow(_items[rowIndex], matched);
     });
   }
 
@@ -261,6 +276,47 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
       return;
     }
 
+    final selectedItems = _items.where((i) => i.produk != null).toList();
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih minimal 1 produk pada item.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    for (final item in selectedItems) {
+      if (item.qty <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Qty item harus lebih dari 0.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (item.harga < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Harga item tidak boleh negatif.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (item.unitController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unit item wajib diisi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -271,7 +327,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
           ? _tagController.text.trim()
           : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
       final data = {
-        'pelanggan': _pelangganController.text,
+        'pelanggan': _selectedKontak?.nama ?? _pelangganController.text,
         'email':
             _emailController.text.isNotEmpty ? _emailController.text : null,
         'alamat_penagihan': _alamatPenagihanController.text.isNotEmpty
@@ -291,8 +347,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
         'tax_percentage': _taxPercentage,
         'diskon_akhir': _diskonAkhir,
         'memo': _memoController.text,
-        'items': _items
-            .where((i) => i.produk != null)
+        'items': selectedItems
             .map((i) => {
                   'produk_id': i.produk!.id,
                   'kuantitas': i.qty,
@@ -551,7 +606,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _tipeHarga = 'Retail'),
+                    onTap: () => setState(() {
+                      _tipeHarga = 'Retail';
+                      for (final row in _items) {
+                        row.harga = _resolvedHargaForProduk(row.produk);
+                      }
+                    }),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -582,7 +642,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _tipeHarga = 'Grosir'),
+                    onTap: () => setState(() {
+                      _tipeHarga = 'Grosir';
+                      for (final row in _items) {
+                        row.harga = _resolvedHargaForProduk(row.produk);
+                      }
+                    }),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -717,9 +782,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                     itemAsString: _produkSearchLabel,
                                     onChanged: (v) {
                                       setState(() {
-                                        _items[i].produk = v;
-                                        _items[i].harga =
-                                            (v?.harga ?? 0).toDouble();
+                                        _applySelectedProdukToRow(_items[i], v);
                                       });
                                     },
                                   ),

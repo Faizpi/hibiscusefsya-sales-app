@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_theme.dart';
 import 'camera_lampiran_capture_screen.dart';
 
@@ -356,6 +357,87 @@ class _LampiranPickerWidgetState extends State<LampiranPickerWidget> {
     return Icons.attach_file_rounded;
   }
 
+  bool _isImageFile(String name) {
+    final lower = name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif');
+  }
+
+  Future<void> _previewFile(PlatformFile file) async {
+    final path = file.path;
+    if (path == null || path.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File tidak tersedia untuk dipreview.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_isImageFile(file.name)) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg(context),
+                  border: Border(
+                    bottom: BorderSide(color: AppTheme.borderColorOf(context)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        file.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: InteractiveViewer(
+                  child: Image.file(File(path), fit: BoxFit.contain),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    final fileUri = Uri.file(path);
+    final opened =
+        await launchUrl(fileUri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File tidak bisa dibuka di perangkat ini.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   String _formatSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
@@ -389,51 +471,65 @@ class _LampiranPickerWidgetState extends State<LampiranPickerWidget> {
           ...widget.files.asMap().entries.map((entry) {
             final idx = entry.key;
             final file = entry.value;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBg(context),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.borderColorOf(context)),
-              ),
-              child: Row(
-                children: [
-                  Icon(_fileIcon(file.name),
-                      size: 20,
-                      color: isDark
-                          ? const Color(0xFF93C5FD)
-                          : AppTheme.primaryColor),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          file.name,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textPrimaryColor(context),
+            return InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => _previewFile(file),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg(context),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.borderColorOf(context)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(_fileIcon(file.name),
+                        size: 20,
+                        color: isDark
+                            ? const Color(0xFF93C5FD)
+                            : AppTheme.primaryColor),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            file.name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textPrimaryColor(context),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          _formatSize(file.size),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textTertiaryColor(context),
+                          Text(
+                            _formatSize(file.size),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textTertiaryColor(context),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                    onPressed: () => _removeFile(idx),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
+                    IconButton(
+                      tooltip: 'Preview',
+                      icon: const Icon(Icons.visibility_outlined, size: 18),
+                      onPressed: () => _previewFile(file),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon:
+                          const Icon(Icons.close, size: 18, color: Colors.red),
+                      onPressed: () => _removeFile(idx),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
               ),
             );
           }),

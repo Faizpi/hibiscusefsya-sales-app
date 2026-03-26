@@ -164,13 +164,44 @@ class ApiService {
   }
 
   dynamic _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body);
+    dynamic data;
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      data = null;
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
 
-    final message = data['message'] ?? 'Terjadi kesalahan.';
+    String message = 'Terjadi kesalahan.';
+    if (data is Map<String, dynamic>) {
+      final rawMessage = data['message'];
+      if (rawMessage is String && rawMessage.trim().isNotEmpty) {
+        message = rawMessage.trim();
+      }
+
+      final errors = data['errors'];
+      if (errors is Map) {
+        final details = <String>[];
+        for (final entry in errors.entries) {
+          final value = entry.value;
+          if (value is List) {
+            details.addAll(
+              value.map((e) => e.toString().trim()).where((e) => e.isNotEmpty),
+            );
+          } else if (value != null) {
+            final text = value.toString().trim();
+            if (text.isNotEmpty) details.add(text);
+          }
+        }
+        if (details.isNotEmpty) {
+          message = '$message\n${details.join('\n')}';
+        }
+      }
+    }
+
     throw ApiException(message, statusCode: response.statusCode);
   }
 
