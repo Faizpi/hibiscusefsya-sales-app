@@ -119,9 +119,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
       row.diskon = _defaultKontakDiskonPersen;
     }
     if (produk == null) return;
-    row.unitController.text = (produk.satuan?.trim().isNotEmpty == true)
-        ? produk.satuan!.trim()
-        : 'Pcs';
+    row.unitController.text = (produk.satuan ?? '').trim();
     row.deskripsiController.text = (produk.deskripsi ?? '').trim();
   }
 
@@ -860,8 +858,6 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: TextFormField(
-                                    key: ValueKey(
-                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
                                     initialValue: _items[i].harga.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),

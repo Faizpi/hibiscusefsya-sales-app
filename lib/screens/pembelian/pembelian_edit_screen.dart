@@ -569,8 +569,8 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
                             Expanded(
                                 flex: 2,
                                 child: TextFormField(
-                                key: ValueKey(
-                                  'harga-$i-${item.produk?.id ?? item.produkId}-${item.harga}'),
+                                    key: ValueKey(
+                                        'harga-$i-${item.produk?.id ?? item.produkId}-${item.harga}'),
                                     initialValue: item.harga.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),

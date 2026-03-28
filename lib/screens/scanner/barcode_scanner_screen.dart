@@ -82,8 +82,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       return;
     }
 
-    final keyField =
-        widget.scanType == 'kontak' ? 'kode_kontak' : 'item_code';
+    final keyField = widget.scanType == 'kontak' ? 'kode_kontak' : 'item_code';
 
     // 1. Exact match
     Map<String, dynamic>? foundItem;

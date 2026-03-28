@@ -244,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final nomor = (item['nomor'] ?? item['invoice'] ?? '-').toString();
         final tgl = item['tgl_transaksi']?.toString();
         final subtitle = tgl != null && tgl.isNotEmpty
-          ? 'Status $status - ${Formatters.dateTime(tgl)}'
+            ? 'Status $status - ${Formatters.dateTime(tgl)}'
             : 'Status $status';
         notifications.add({
           'title': nomor,

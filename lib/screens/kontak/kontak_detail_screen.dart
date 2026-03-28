@@ -150,7 +150,7 @@ class _KontakDetailScreenState extends State<KontakDetailScreen> {
                             _InfoRow(
                                 'PIN',
                                 _data!.pin != null && _data!.pin!.isNotEmpty
-                                ? '******'
+                                    ? '******'
                                     : '-'),
                             _InfoRow('Alamat', _data!.alamat ?? '-'),
                             _InfoRow(

@@ -214,13 +214,13 @@ class _StokLogScreenState extends State<StokLogScreen> {
                     itemBuilder: (ctx, i) {
                       final raw = provider.logData[i];
                       final log = raw is Map
-                        ? Map<String, dynamic>.from(raw)
-                        : <String, dynamic>{};
+                          ? Map<String, dynamic>.from(raw)
+                          : <String, dynamic>{};
                       final stokSebelum = _stokSebelum(log);
                       final stokSesudah = _stokSesudah(log);
                       final selisih = _toInt(log['selisih']) != 0
-                        ? _toInt(log['selisih'])
-                        : stokSesudah - stokSebelum;
+                          ? _toInt(log['selisih'])
+                          : stokSesudah - stokSebelum;
                       final isPositive = selisih >= 0;
 
                       return Card(

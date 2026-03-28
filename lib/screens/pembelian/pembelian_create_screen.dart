@@ -266,10 +266,10 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
     try {
       final provider = Provider.of<PembelianProvider>(context, listen: false);
       final loginName =
-        Provider.of<AuthProvider>(context, listen: false).user?.name;
+          Provider.of<AuthProvider>(context, listen: false).user?.name;
       final resolvedTag = _tagController.text.trim().isNotEmpty
-        ? _tagController.text.trim()
-        : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
+          ? _tagController.text.trim()
+          : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
       final data = {
         'tgl_transaksi': _tglTransaksi.toIso8601String().split('T')[0],
         'syarat_pembayaran': _syaratPembayaran,

@@ -41,12 +41,12 @@ class SummaryCard extends StatelessWidget {
               children: [
                 Text(label,
                     style: TextStyle(
-                    fontSize: 9,
+                        fontSize: 9,
                         color: AppTheme.textSecondaryColor(context),
-                    fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis),
+                        fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 Text(value,
                     style: TextStyle(
