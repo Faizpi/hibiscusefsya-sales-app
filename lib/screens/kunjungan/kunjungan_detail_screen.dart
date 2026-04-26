@@ -179,18 +179,31 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
                     const Divider(height: 24),
                     _InfoRow('Tujuan', d.tujuan ?? '-'),
                     _InfoRow('Tanggal', Formatters.date(d.tglKunjungan)),
-                    if (d.kontak != null)
-                      _InfoRow('Kontak', d.kontak!['nama'] ?? '-'),
+                    _InfoRow('Pembuat', d.user?['name'] ?? '-'),
+                    if (d.approver != null)
+                      _InfoRow('Approver', d.approver?['name'] ?? '-'),
                     _InfoRow('Gudang', d.gudang?['nama_gudang'] ?? '-'),
-                    _InfoRow('Dibuat oleh', d.user?['name'] ?? '-'),
-                    if (d.koordinat != null)
+                    const Divider(height: 16),
+                    _InfoRow(
+                      'Pelanggan',
+                      d.salesNama?.isNotEmpty == true
+                          ? d.salesNama!
+                          : (d.kontak?['nama'] ?? '-'),
+                    ),
+                    _InfoRow(
+                      'Email',
+                      d.salesEmail?.isNotEmpty == true
+                          ? d.salesEmail!
+                          : (d.kontak?['email']?.toString() ?? '-'),
+                    ),
+                    _InfoRow(
+                      'Alamat',
+                      d.salesAlamat?.isNotEmpty == true
+                          ? d.salesAlamat!
+                          : (d.kontak?['alamat']?.toString() ?? '-'),
+                    ),
+                    if (d.koordinat != null && d.koordinat!.isNotEmpty)
                       _InfoRow('Koordinat', d.koordinat!),
-                    if (d.salesNama != null && d.salesNama!.isNotEmpty)
-                      _InfoRow('Nama Pelanggan', d.salesNama!),
-                    if (d.salesEmail != null && d.salesEmail!.isNotEmpty)
-                      _InfoRow('Email Pelanggan', d.salesEmail!),
-                    if (d.salesAlamat != null && d.salesAlamat!.isNotEmpty)
-                      _InfoRow('Alamat Pelanggan', d.salesAlamat!),
                     if (d.memo != null && d.memo!.isNotEmpty)
                       _InfoRow('Memo', d.memo!),
                   ]),

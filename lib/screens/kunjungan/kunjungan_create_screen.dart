@@ -519,13 +519,14 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Nama Pelanggan, Email & Alamat dari kontak
+            // Pelanggan detail (dari kontak yang dipilih/scan)
             TextFormField(
               controller: _salesNamaController,
               decoration: const InputDecoration(
                   labelText: 'Nama Pelanggan',
                   hintText: 'Otomatis dari kontak',
-                  border: OutlineInputBorder()),
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge_outlined, size: 20)),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -533,14 +534,17 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
               decoration: const InputDecoration(
                   labelText: 'Email Pelanggan',
                   hintText: 'Otomatis dari kontak',
-                  border: OutlineInputBorder()),
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email_outlined, size: 20)),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _alamatController,
               decoration: const InputDecoration(
-                  labelText: 'Alamat Pelanggan', border: OutlineInputBorder()),
+                  labelText: 'Alamat Pelanggan',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on_outlined, size: 20)),
               maxLines: 2,
             ),
             const SizedBox(height: 16),

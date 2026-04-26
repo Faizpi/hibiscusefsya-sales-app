@@ -485,22 +485,35 @@ class DetailPrintActionsHelper {
       _kvLine('Tanggal', _stringValue(data['tanggal'])),
       _kvLine('Tujuan', _stringValue(data['tujuan'])),
       _kvLine('Gudang', _stringValue(data['gudang'])),
-      _kvLine('Dibuat oleh', _stringValue(data['sales_nama'])),
-      _kvLine('Status', _stringValue(data['status'])),
     ]);
-    // Kontak (nama dari map kontak)
-    final kontak = data['kontak'];
-    if (kontak is Map) {
-      final kontakNama = _stringValue(kontak['nama']);
-      if (kontakNama.isNotEmpty) lines.add(_kvLine('Kontak', kontakNama));
-    } else if (_stringValue(data['kontak_nama']).isNotEmpty) {
-      lines.add(_kvLine('Kontak', _stringValue(data['kontak_nama'])));
+    // Pembuat (user yang login)
+    String pembuatNama = _stringValue(data['dibuat_oleh']);
+    if (pembuatNama.isEmpty) {
+      final user = data['user'];
+      if (user is Map) pembuatNama = _stringValue(user['name']);
+    }
+    if (pembuatNama.isEmpty) pembuatNama = _stringValue(data['pembuat']);
+    if (pembuatNama.isNotEmpty) lines.add(_kvLine('Pembuat', pembuatNama));
+    lines.add(_kvLine('Status', _stringValue(data['status'])));
+    // Pelanggan (dari sales_nama atau kontak nested)
+    String pelangganNama = _stringValue(data['sales_nama']);
+    if (pelangganNama.isEmpty) {
+      final kontak = data['kontak'];
+      if (kontak is Map) {
+        pelangganNama = _stringValue(kontak['nama']);
+      }
+      if (pelangganNama.isEmpty) {
+        pelangganNama = _stringValue(data['kontak_nama']);
+      }
+    }
+    if (pelangganNama.isNotEmpty) {
+      lines.add(_kvLine('Pelanggan', pelangganNama));
     }
     if (_stringValue(data['sales_email']).isNotEmpty) {
-      lines.add(_kvLine('Email Plgn', _stringValue(data['sales_email'])));
+      lines.add(_kvLine('Email', _stringValue(data['sales_email'])));
     }
     if (_stringValue(data['sales_alamat']).isNotEmpty) {
-      lines.add(_kvLine('Alamat Plgn', _stringValue(data['sales_alamat'])));
+      lines.add(_kvLine('Alamat', _stringValue(data['sales_alamat'])));
     }
     if (_stringValue(data['koordinat']).isNotEmpty) {
       lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
