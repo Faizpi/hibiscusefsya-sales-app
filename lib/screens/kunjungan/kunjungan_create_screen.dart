@@ -14,6 +14,7 @@ import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import 'package:file_picker/file_picker.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
 
 class KunjunganCreateScreen extends StatefulWidget {
@@ -58,24 +59,10 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
       Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       _applyUserGudangRule();
-      _applyUserDefaults();
     });
   }
 
-  void _applyUserDefaults() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user == null) return;
-    if (_salesNamaController.text.trim().isEmpty) {
-      _salesNamaController.text = user.name;
-    }
-    if (_emailController.text.trim().isEmpty && user.email.trim().isNotEmpty) {
-      _emailController.text = user.email;
-    }
-    if (_alamatController.text.trim().isEmpty &&
-        (user.alamat?.trim().isNotEmpty == true)) {
-      _alamatController.text = user.alamat!.trim();
-    }
-  }
+
 
   @override
   void dispose() {
@@ -89,6 +76,58 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
 
   void _addItem() => setState(() => _items.add(_KunjunganItem()));
   void _removeItem(int i) => setState(() => _items.removeAt(i));
+
+  Future<void> _openKontakForm() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const KontakFormScreen()),
+    );
+    if (mounted) {
+      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+    }
+  }
+
+  Future<void> _scanKontak() async {
+    final provider = Provider.of<KontakProvider>(context, listen: false);
+    await provider.fetchKontak();
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          scanType: 'kontak',
+          dataList: provider.items
+              .map((k) => {
+                    'id': k.id,
+                    'kode_kontak': k.kodeKontak,
+                    'nama': k.nama,
+                  })
+              .toList(),
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final scannedId = result['id'] is int
+        ? result['id'] as int
+        : int.tryParse('${result['id']}');
+    if (scannedId == null) return;
+    final matched = provider.items.cast<KontakModel?>().firstWhere(
+          (k) => k?.id == scannedId,
+          orElse: () => null,
+        );
+    final scannedName =
+        (result['nama'] ?? matched?.nama ?? '').toString().trim();
+    final scannedEmail =
+        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedAlamat =
+        (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
+    setState(() {
+      _selectedKontak = matched;
+      _salesNamaController.text = scannedName;
+      _emailController.text = scannedEmail;
+      _alamatController.text = scannedAlamat;
+    });
+  }
 
   Future<void> _applyUserGudangRule() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
@@ -283,18 +322,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
     }
     setState(() => _isSubmitting = true);
     try {
-      final user = Provider.of<AuthProvider>(context, listen: false).user;
-      final resolvedSalesName = _salesNamaController.text.trim().isNotEmpty
-          ? _salesNamaController.text.trim()
-          : (user?.name.trim().isNotEmpty == true ? user!.name.trim() : null);
-      final resolvedSalesEmail = _emailController.text.trim().isNotEmpty
-          ? _emailController.text.trim()
-          : (user?.email.trim().isNotEmpty == true ? user!.email.trim() : null);
-      final resolvedSalesAddress = _alamatController.text.trim().isNotEmpty
-          ? _alamatController.text.trim()
-          : ((user?.alamat?.trim().isNotEmpty == true)
-              ? user!.alamat!.trim()
-              : null);
       final data = <String, dynamic>{
         'tgl_kunjungan': _tglKunjungan.toIso8601String().split('T')[0],
         'kontak_id': _selectedKontak!.id,
@@ -304,15 +331,27 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
         'koordinat': _koordinatController.text.isNotEmpty
             ? _koordinatController.text
             : null,
-        'sales_nama': resolvedSalesName,
-        'sales_email': resolvedSalesEmail,
-        'sales_alamat': resolvedSalesAddress,
+        'sales_nama': _salesNamaController.text.trim().isNotEmpty
+            ? _salesNamaController.text.trim()
+            : null,
+        'sales_email': _emailController.text.trim().isNotEmpty
+            ? _emailController.text.trim()
+            : null,
+        'sales_alamat': _alamatController.text.trim().isNotEmpty
+            ? _alamatController.text.trim()
+            : null,
         'items': _items
             .where((i) => i.produk != null)
             .map((i) => {
                   'produk_id': i.produk!.id,
                   'jumlah': i.qty,
                   'tipe_stok': _resolveTipeStokByTujuan(),
+                  'batch_number': i.batchController.text.trim().isNotEmpty
+                      ? i.batchController.text.trim()
+                      : null,
+                  'expired_date': i.expDate != null
+                      ? i.expDate!.toIso8601String().split('T')[0]
+                      : null,
                   'keterangan': i.keteranganController.text,
                 })
             .toList(),
@@ -458,22 +497,42 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
                 );
               },
             ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _scanKontak,
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Scan Pelanggan'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openKontakForm,
+                    icon: const Icon(Icons.person_add_alt_1),
+                    label: const Text('Tambah Kontak'),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
-            // Nama Sales, Email & Alamat sales
+            // Nama Pelanggan, Email & Alamat dari kontak
             TextFormField(
               controller: _salesNamaController,
               decoration: const InputDecoration(
-                  labelText: 'Nama Sales',
-                  hintText: 'Nama sales/aprover',
+                  labelText: 'Nama Pelanggan',
+                  hintText: 'Otomatis dari kontak',
                   border: OutlineInputBorder()),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'email@contoh.com',
+                  labelText: 'Email Pelanggan',
+                  hintText: 'Otomatis dari kontak',
                   border: OutlineInputBorder()),
               keyboardType: TextInputType.emailAddress,
             ),
@@ -481,7 +540,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             TextFormField(
               controller: _alamatController,
               decoration: const InputDecoration(
-                  labelText: 'Alamat', border: OutlineInputBorder()),
+                  labelText: 'Alamat Pelanggan', border: OutlineInputBorder()),
               maxLines: 2,
             ),
             const SizedBox(height: 16),
@@ -653,6 +712,29 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
                                       onPressed: () => _removeItem(i)),
                                 ]),
                                 const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _items[i].batchController,
+                                        decoration: const InputDecoration(
+                                            labelText: 'Batch',
+                                            isDense: true,
+                                            border: OutlineInputBorder()),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: DatePickerField(
+                                        label: 'Exp Date',
+                                        selectedDate: _items[i].expDate,
+                                        onDateSelected: (d) => setState(
+                                            () => _items[i].expDate = d),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 TextFormField(
                                     controller: _items[i].keteranganController,
                                     decoration: const InputDecoration(
@@ -708,5 +790,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
 class _KunjunganItem {
   ProdukModel? produk;
   int qty = 1;
+  DateTime? expDate;
+  final batchController = TextEditingController();
   final keteranganController = TextEditingController();
 }

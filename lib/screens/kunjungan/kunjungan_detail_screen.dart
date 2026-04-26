@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/kunjungan_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/kunjungan_provider.dart';
 import '../../utils/formatters.dart';
@@ -23,6 +24,25 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
   KunjunganModel? _data;
   bool _isLoading = true;
   String? _error;
+
+  bool _canEditForCurrentUser(UserModel user, String status) {
+    if (!user.hasPermission('can_edit_transaction') || user.isSpectator) {
+      return false;
+    }
+    if (status == 'Pending') return true;
+    return status == 'Approved' && user.isSuperAdmin;
+  }
+
+  bool _canCancelForCurrentUser(UserModel user, String status) {
+    if (status == 'Pending') {
+      return user.hasPermission('can_cancel_transaction');
+    }
+    if (status == 'Approved') {
+      return user.isSuperAdmin &&
+          user.hasPermission('can_cancel_approved_transaction');
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -62,8 +82,7 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
           ),
           if (_data != null &&
               user != null &&
-              user.hasPermission('can_edit_transaction') &&
-              !user.isSpectator)
+              _canEditForCurrentUser(user, _data!.status))
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () async {
@@ -82,10 +101,7 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
               final canApprove =
                   user.hasPermission('can_approve_transaction') &&
                       status == 'Pending';
-              final canCancel = (user.hasPermission('can_cancel_transaction') &&
-                      status == 'Pending') ||
-                  (user.hasPermission('can_cancel_approved_transaction') &&
-                      (status == 'Approved' || status == 'Lunas'));
+              final canCancel = _canCancelForCurrentUser(user, status);
               final canUncancel =
                   user.hasPermission('can_uncancel_transaction') &&
                       status == 'Canceled';
@@ -170,11 +186,11 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
                     if (d.koordinat != null)
                       _InfoRow('Koordinat', d.koordinat!),
                     if (d.salesNama != null && d.salesNama!.isNotEmpty)
-                      _InfoRow('Nama Sales', d.salesNama!),
+                      _InfoRow('Nama Pelanggan', d.salesNama!),
                     if (d.salesEmail != null && d.salesEmail!.isNotEmpty)
-                      _InfoRow('Email Sales', d.salesEmail!),
+                      _InfoRow('Email Pelanggan', d.salesEmail!),
                     if (d.salesAlamat != null && d.salesAlamat!.isNotEmpty)
-                      _InfoRow('Alamat Sales', d.salesAlamat!),
+                      _InfoRow('Alamat Pelanggan', d.salesAlamat!),
                     if (d.memo != null && d.memo!.isNotEmpty)
                       _InfoRow('Memo', d.memo!),
                   ]),
@@ -222,6 +238,21 @@ class _KunjunganDetailScreenState extends State<KunjunganDetailScreen> {
                                             context)),
                                     overflow: TextOverflow.ellipsis),
                               ),
+                            if (item.batchNumber != null &&
+                                item.batchNumber!.isNotEmpty)
+                              Text('Batch: ${item.batchNumber}',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondaryColor(
+                                          context))),
+                            if (item.expiredDate != null &&
+                                item.expiredDate!.isNotEmpty)
+                              Text(
+                                  'Expired: ${Formatters.date(item.expiredDate)}',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondaryColor(
+                                          context))),
                           ]),
                           if (item.keterangan != null &&
                               item.keterangan!.isNotEmpty)

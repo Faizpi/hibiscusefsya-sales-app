@@ -375,6 +375,11 @@ class DetailPrintActionsHelper {
 
     bytes.addAll(generator.hr());
     bytes.addAll(generator.text(
+      'marketing@hibiscusefsya.com',
+      styles: const PosStyles(align: PosAlign.center),
+    ));
+    bytes.addAll(generator.feed(1));
+    bytes.addAll(generator.text(
       'Terima kasih',
       styles: const PosStyles(align: PosAlign.center),
     ));
@@ -492,10 +497,10 @@ class DetailPrintActionsHelper {
       lines.add(_kvLine('Kontak', _stringValue(data['kontak_nama'])));
     }
     if (_stringValue(data['sales_email']).isNotEmpty) {
-      lines.add(_kvLine('Email Sales', _stringValue(data['sales_email'])));
+      lines.add(_kvLine('Email Plgn', _stringValue(data['sales_email'])));
     }
     if (_stringValue(data['sales_alamat']).isNotEmpty) {
-      lines.add(_kvLine('Alamat Sales', _stringValue(data['sales_alamat'])));
+      lines.add(_kvLine('Alamat Plgn', _stringValue(data['sales_alamat'])));
     }
     if (_stringValue(data['koordinat']).isNotEmpty) {
       lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
