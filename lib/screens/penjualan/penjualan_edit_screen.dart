@@ -16,6 +16,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
 
 class PenjualanEditScreen extends StatefulWidget {
@@ -137,6 +138,11 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     return 'retail';
   }
 
+  bool _canEditApproved() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    return widget.data.status != 'Approved' || user?.isSuperAdmin == true;
+  }
+
   void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
     row.produk = produk;
     row.produkId = produk?.id;
@@ -154,6 +160,58 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     final codePart = code.isNotEmpty ? '$code - ' : '';
     final telpPart = telp.isNotEmpty ? ' | $telp' : '';
     return '$codePart${k.nama}$telpPart';
+  }
+
+  Future<void> _openKontakForm() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const KontakFormScreen()),
+    );
+    if (mounted) {
+      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+    }
+  }
+
+  Future<void> _scanKontak() async {
+    final provider = Provider.of<KontakProvider>(context, listen: false);
+    provider.fetchKontak();
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          scanType: 'kontak',
+          dataList: provider.items
+              .map((k) => {
+                    'id': k.id,
+                    'kode_kontak': k.kodeKontak,
+                    'nama': k.nama,
+                  })
+              .toList(),
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final scannedId = result['id'] is int
+        ? result['id'] as int
+        : int.tryParse('${result['id']}');
+    if (scannedId == null) return;
+    final matched = provider.items.cast<KontakModel?>().firstWhere(
+          (k) => k?.id == scannedId,
+          orElse: () => null,
+        );
+    final scannedName =
+        (result['nama'] ?? matched?.nama ?? '').toString().trim();
+    final scannedEmail =
+        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedAlamat =
+        (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
+    setState(() {
+      _selectedKontak = matched;
+      _pelangganController.text = scannedName;
+      _emailController.text = scannedEmail;
+      _alamatPenagihanController.text = scannedAlamat;
+    });
   }
 
   String _produkSearchLabel(ProdukModel p) {
@@ -291,6 +349,16 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_canEditApproved()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Hanya superadmin yang dapat mengubah transaksi approved.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -375,6 +443,40 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_canEditApproved()) {
+      return GlassScaffold(
+        appBar: AppBar(
+          title: const Text('Edit Penjualan'),
+          flexibleSpace: Container(
+              decoration:
+                  BoxDecoration(gradient: AppTheme.mainGradient(context))),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.lock_outline, size: 56),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Transaksi approved hanya bisa diedit oleh superadmin.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Kembali'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return GlassScaffold(
       appBar: AppBar(
         title: const Text('Edit Penjualan'),
@@ -432,6 +534,26 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                           : null,
                 );
               },
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _scanKontak,
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Scan Pelanggan'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openKontakForm,
+                    icon: const Icon(Icons.person_add_alt_1),
+                    label: const Text('Tambah Kontak'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextFormField(

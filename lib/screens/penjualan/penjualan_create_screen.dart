@@ -16,6 +16,7 @@ import '../../widgets/koordinat_lokasi_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
+import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
 
 class PenjualanCreateScreen extends StatefulWidget {
@@ -134,6 +135,66 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
   String _produkSearchLabel(ProdukModel p) {
     final code = (p.itemCode ?? '').trim();
     return code.isNotEmpty ? '$code - ${p.namaProduk}' : p.namaProduk;
+  }
+
+  Future<void> _openKontakForm() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const KontakFormScreen()),
+    );
+    if (mounted) {
+      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+    }
+  }
+
+  Future<void> _scanKontak() async {
+    final provider = Provider.of<KontakProvider>(context, listen: false);
+    provider.fetchKontak();
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          scanType: 'kontak',
+          dataList: provider.items
+              .map((k) => {
+                    'id': k.id,
+                    'kode_kontak': k.kodeKontak,
+                    'nama': k.nama,
+                  })
+              .toList(),
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final scannedId = result['id'] is int
+        ? result['id'] as int
+        : int.tryParse('${result['id']}');
+    if (scannedId == null) return;
+    final matched = provider.items.cast<KontakModel?>().firstWhere(
+          (k) => k?.id == scannedId,
+          orElse: () => null,
+        );
+    final scannedName =
+        (result['nama'] ?? matched?.nama ?? '').toString().trim();
+    final scannedEmail =
+        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedAlamat =
+        (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
+    setState(() {
+      _selectedKontak = matched;
+      _pelangganController.text = scannedName;
+      _emailController.text = scannedEmail;
+      _alamatPenagihanController.text = scannedAlamat;
+      _defaultKontakDiskonPersen = (matched?.diskonPersen ?? 0).toDouble();
+      if (_defaultKontakDiskonPersen > 0) {
+        for (final row in _items) {
+          if (row.diskon == 0) {
+            row.diskon = _defaultKontakDiskonPersen;
+          }
+        }
+      }
+    });
   }
 
   Future<void> _applyUserGudangRule() async {
@@ -468,6 +529,26 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                   validator: (v) => v == null ? 'Wajib diisi' : null,
                 );
               },
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _scanKontak,
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Scan Pelanggan'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openKontakForm,
+                    icon: const Icon(Icons.person_add_alt_1),
+                    label: const Text('Tambah Kontak'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 

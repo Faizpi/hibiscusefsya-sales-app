@@ -27,7 +27,6 @@ class KunjunganCreateScreen extends StatefulWidget {
 class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _memoController = TextEditingController();
-  final _salesNamaController = TextEditingController();
   final _emailController = TextEditingController();
   final _alamatController = TextEditingController();
 
@@ -67,7 +66,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
   @override
   void dispose() {
     _memoController.dispose();
-    _salesNamaController.dispose();
     _emailController.dispose();
     _alamatController.dispose();
     _koordinatController.dispose();
@@ -89,7 +87,8 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    await provider.fetchKontak();
+    // Don't await – data is already loaded from initState
+    provider.fetchKontak();
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -123,7 +122,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _selectedKontak = matched;
-      _salesNamaController.text = scannedName;
+
       _emailController.text = scannedEmail;
       _alamatController.text = scannedAlamat;
     });
@@ -331,9 +330,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
         'koordinat': _koordinatController.text.isNotEmpty
             ? _koordinatController.text
             : null,
-        'sales_nama': _salesNamaController.text.trim().isNotEmpty
-            ? _salesNamaController.text.trim()
-            : null,
+        'sales_nama': _selectedKontak?.nama,
         'sales_email': _emailController.text.trim().isNotEmpty
             ? _emailController.text.trim()
             : null,
@@ -488,7 +485,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
                   itemAsString: _kontakSearchLabel,
                   onChanged: (v) => setState(() {
                     _selectedKontak = v;
-                    _salesNamaController.text = v?.nama ?? '';
                     _emailController.text = v?.email ?? '';
                     _alamatController.text = v?.alamat ?? '';
                   }),
@@ -519,16 +515,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Pelanggan detail (dari kontak yang dipilih/scan)
-            TextFormField(
-              controller: _salesNamaController,
-              decoration: const InputDecoration(
-                  labelText: 'Nama Pelanggan',
-                  hintText: 'Otomatis dari kontak',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge_outlined, size: 20)),
-            ),
-            const SizedBox(height: 16),
+            // Email & Alamat Pelanggan (dari kontak yang dipilih/scan)
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(

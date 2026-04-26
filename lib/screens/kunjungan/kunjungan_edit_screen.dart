@@ -29,7 +29,6 @@ class KunjunganEditScreen extends StatefulWidget {
 class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _memoController;
-  late final TextEditingController _salesNamaController;
   late final TextEditingController _emailController;
   late final TextEditingController _alamatController;
 
@@ -58,7 +57,6 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
     super.initState();
     final d = widget.data;
     _memoController = TextEditingController(text: d.memo ?? '');
-    _salesNamaController = TextEditingController(text: d.salesNama ?? '');
     _emailController = TextEditingController(text: d.salesEmail ?? '');
     _alamatController = TextEditingController(text: d.salesAlamat ?? '');
     _kontakId = d.kontakId;
@@ -95,7 +93,6 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
   @override
   void dispose() {
     _memoController.dispose();
-    _salesNamaController.dispose();
     _emailController.dispose();
     _alamatController.dispose();
     _koordinatController.dispose();
@@ -117,7 +114,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    await provider.fetchKontak();
+    provider.fetchKontak();
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -151,7 +148,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _kontakId = matched?.id;
-      _salesNamaController.text = scannedName;
+
       _emailController.text = scannedEmail;
       _alamatController.text = scannedAlamat;
     });
@@ -360,6 +357,12 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
           }
         }
       }
+      // Lookup kontak nama for sales_nama
+      final kontakProvider = Provider.of<KontakProvider>(context, listen: false);
+      final selectedKontak = kontakProvider.items.cast<KontakModel?>().firstWhere(
+            (k) => k?.id == _kontakId,
+            orElse: () => null,
+          );
       final data = <String, dynamic>{
         'tgl_kunjungan': _tglKunjungan.toIso8601String().split('T')[0],
         'kontak_id': _kontakId,
@@ -369,9 +372,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
         'koordinat': _koordinatController.text.isNotEmpty
             ? _koordinatController.text
             : null,
-        'sales_nama': _salesNamaController.text.trim().isNotEmpty
-            ? _salesNamaController.text.trim()
-            : null,
+        'sales_nama': selectedKontak?.nama,
         'sales_email': _emailController.text.trim().isNotEmpty
             ? _emailController.text.trim()
             : null,
@@ -540,8 +541,6 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
                   onChanged: (v) {
                     setState(() {
                       _kontakId = v?.id;
-                      _salesNamaController.text =
-                          v?.nama ?? _salesNamaController.text;
                       _emailController.text = v?.email ?? _emailController.text;
                       _alamatController.text =
                           v?.alamat ?? _alamatController.text;
@@ -574,16 +573,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Pelanggan detail (dari kontak yang dipilih/scan)
-            TextFormField(
-              controller: _salesNamaController,
-              decoration: const InputDecoration(
-                  labelText: 'Nama Pelanggan',
-                  hintText: 'Otomatis dari kontak',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge_outlined, size: 20)),
-            ),
-            const SizedBox(height: 16),
+            // Email & Alamat Pelanggan (dari kontak yang dipilih/scan)
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
