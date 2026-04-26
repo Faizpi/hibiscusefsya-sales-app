@@ -311,32 +311,117 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openNotifications(List<Map<String, String>> notifications) {
     showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
-        if (notifications.isEmpty) {
-          return const SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('Belum ada notifikasi.'),
-            ),
-          );
-        }
-
         return SafeArea(
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: notifications.length,
-            separatorBuilder: (_, __) => Divider(
-              height: 1,
-              color: AppTheme.dividerColorOf(context),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(100),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.scaffoldBg(ctx),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.glassBorderColor(ctx),
+                      width: 1,
+                    ),
+                  ),
+                  child: notifications.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.notifications_off_outlined,
+                                  size: 18, color: Color(0xFF888888)),
+                              SizedBox(width: 8),
+                              Text('Belum ada notifikasi.',
+                                  style: TextStyle(color: Color(0xFF888888))),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.notifications_outlined,
+                                      size: 18),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'Notifikasi',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.dangerColor,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      '${notifications.length}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Divider(
+                                height: 1,
+                                color: AppTheme.dividerColorOf(ctx)),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight:
+                                    MediaQuery.of(ctx).size.height * 0.4,
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: notifications.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  color: AppTheme.dividerColorOf(ctx),
+                                ),
+                                itemBuilder: (ctx, i) {
+                                  final n = notifications[i];
+                                  return ListTile(
+                                    leading: const Icon(
+                                        Icons.notifications_active_outlined,
+                                        size: 20),
+                                    title: Text(n['title'] ?? '-'),
+                                    subtitle: Text(n['body'] ?? ''),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                ),
+              ],
             ),
-            itemBuilder: (ctx, i) {
-              final n = notifications[i];
-              return ListTile(
-                leading: const Icon(Icons.notifications_active_outlined),
-                title: Text(n['title'] ?? '-'),
-                subtitle: Text(n['body'] ?? ''),
-              );
-            },
           ),
         );
       },
@@ -1087,6 +1172,8 @@ class _HomeScreenState extends State<HomeScreen> {
         await showModalBottomSheet<({List<String> order, Set<String> enabled})>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
         final order = List<String>.from(initialOrder);
         var enabled = Set<String>.from(enabledSet);

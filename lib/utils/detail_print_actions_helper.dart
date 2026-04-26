@@ -271,67 +271,211 @@ class DetailPrintActionsHelper {
     final title = _receiptTitle(data);
     final lines = _buildReceiptLines(data);
 
-    final sb = StringBuffer();
-    // Simulate paper width of 32 chars
-    String padCenter(String text) {
-      if (text.length >= 32) return text;
-      final leftPad = ((32 - text.length) / 2).floor();
-      return ' ' * leftPad + text;
-    }
+    // Build preview line widgets – mirrors ESC/POS layout visually
+    final previewWidgets = <Widget>[];
 
-    sb.writeln(padCenter('HIBISCUS EFSYA'));
+    const paperWidth = 300.0; // ~58mm in logical px at typical density
+    const mono = TextStyle(
+      fontFamily: 'RobotoMono',
+      fontSize: 11.5,
+      color: Color(0xFF1A1A1A),
+      height: 1.45,
+      letterSpacing: 0.2,
+    );
+    const monoCenter = TextStyle(
+      fontFamily: 'RobotoMono',
+      fontSize: 11.5,
+      color: Color(0xFF1A1A1A),
+      height: 1.45,
+      letterSpacing: 0.2,
+    );
+    const monoBigBold = TextStyle(
+      fontFamily: 'RobotoMono',
+      fontSize: 16,
+      fontWeight: FontWeight.w800,
+      color: Color(0xFF1A1A1A),
+      height: 1.3,
+      letterSpacing: 0.5,
+    );
+    const dividerStyle = TextStyle(
+      fontFamily: 'RobotoMono',
+      fontSize: 11,
+      color: Color(0xFF888888),
+      letterSpacing: 0.2,
+    );
+
+    previewWidgets.add(
+      Text('HIBISCUS EFSYA', style: monoBigBold, textAlign: TextAlign.center),
+    );
     if (title.isNotEmpty) {
-      sb.writeln(padCenter(title));
+      previewWidgets.add(const SizedBox(height: 2));
+      previewWidgets.add(
+        Text(title, style: monoCenter.copyWith(fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+      );
     }
-    sb.writeln('-' * 32);
+    previewWidgets.add(const SizedBox(height: 6));
+    previewWidgets.add(Text('─' * 28, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(const SizedBox(height: 4));
 
     for (final line in lines) {
       if (line == null) {
-        sb.writeln('');
+        previewWidgets.add(const SizedBox(height: 6));
       } else {
-        sb.writeln(line);
+        previewWidgets.add(Text(line, style: mono));
       }
     }
 
-    sb.writeln('-' * 32);
-    sb.writeln(padCenter('marketing@hibiscusefsya.com'));
-    sb.writeln();
-    sb.writeln(padCenter('Terima kasih'));
+    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(Text('─' * 28, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(const SizedBox(height: 6));
+    previewWidgets.add(
+      Text('marketing@hibiscusefsya.com', style: monoCenter, textAlign: TextAlign.center),
+    );
+    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(
+      Text('Terima kasih', style: monoCenter.copyWith(fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+    );
+    previewWidgets.add(const SizedBox(height: 12));
 
-    final receiptText = sb.toString();
-
-    return showDialog<bool>(
+    return showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Preview Struk'),
-          content: Container(
-            width: double.maxFinite,
-            color: Colors.white,
-            padding: const EdgeInsets.all(12),
-            child: SingleChildScrollView(
-              child: Text(
-                receiptText,
-                style: const TextStyle(
-                  fontFamily: 'Courier',
-                  fontSize: 13,
-                  color: Colors.black,
-                  height: 1.3,
-                ),
+        final media = MediaQuery.of(ctx);
+        final maxH = media.size.height * 0.85;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxH),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(100),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  // Sheet card
+                  Flexible(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header bar
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+                            decoration: const BoxDecoration(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.receipt_long_outlined, size: 18, color: Color(0xFF555555)),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Preview Struk',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: const Text('Batal', style: TextStyle(color: Color(0xFF888888))),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Divider
+                          Container(height: 1, color: const Color(0xFFE0E0E0)),
+                          // Receipt paper area
+                          Flexible(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Container(
+                                  width: paperWidth,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(20),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    // Torn-paper top edge
+                                    children: [
+                                      // Top jagged edge simulation
+                                      CustomPaint(
+                                        size: const Size(double.infinity, 10),
+                                        painter: _TornEdgePainter(isTop: true),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: previewWidgets,
+                                        ),
+                                      ),
+                                      // Bottom jagged edge
+                                      CustomPaint(
+                                        size: const Size(double.infinity, 10),
+                                        painter: _TornEdgePainter(isTop: false),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Action button
+                          Container(height: 1, color: const Color(0xFFE0E0E0)),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                icon: const Icon(Icons.print_outlined),
+                                label: const Text('Pilih Printer Bluetooth'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(ctx, true),
-              icon: const Icon(Icons.print),
-              label: const Text('Pilih Printer'),
-            ),
-          ],
         );
       },
     );
@@ -370,25 +514,61 @@ class DetailPrintActionsHelper {
     if (!context.mounted) return;
     final selected = await showModalBottomSheet<BluetoothDevice>(
       context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            const ListTile(
-              title: Text(
-                'Pilih Printer Bluetooth',
-                style: TextStyle(fontWeight: FontWeight.w700),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(100),
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ),
-            ...bondedDevices.map(
-              (d) => ListTile(
-                leading: const Icon(Icons.print),
-                title: Text(d.name ?? 'Unnamed Device'),
-                subtitle: Text(d.address),
-                onTap: () => Navigator.pop(ctx, d),
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.print_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Pilih Printer Bluetooth',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ...bondedDevices.map(
+                      (d) => ListTile(
+                        leading: const Icon(Icons.bluetooth_outlined),
+                        title: Text(d.name ?? 'Unnamed Device'),
+                        subtitle: Text(d.address, style: const TextStyle(fontSize: 12)),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => Navigator.pop(ctx, d),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1004,4 +1184,47 @@ class DetailPrintActionsHelper {
       ),
     );
   }
+}
+
+/// Paints a simple zigzag torn-paper edge at the top or bottom of a receipt.
+class _TornEdgePainter extends CustomPainter {
+  final bool isTop;
+  const _TornEdgePainter({required this.isTop});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFF7F7F7) // matches sheet background
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    const teethCount = 14;
+    final teethWidth = size.width / teethCount;
+    final teethHeight = size.height;
+
+    if (isTop) {
+      path.moveTo(0, 0);
+      for (int i = 0; i < teethCount; i++) {
+        final x = i * teethWidth;
+        path.lineTo(x + teethWidth / 2, teethHeight);
+        path.lineTo(x + teethWidth, 0);
+      }
+      path.lineTo(size.width, 0);
+      path.close();
+    } else {
+      path.moveTo(0, teethHeight);
+      for (int i = 0; i < teethCount; i++) {
+        final x = i * teethWidth;
+        path.lineTo(x + teethWidth / 2, 0);
+        path.lineTo(x + teethWidth, teethHeight);
+      }
+      path.lineTo(size.width, teethHeight);
+      path.close();
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
