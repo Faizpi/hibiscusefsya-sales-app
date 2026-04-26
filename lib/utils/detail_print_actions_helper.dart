@@ -245,16 +245,96 @@ class DetailPrintActionsHelper {
 
       final response = await service.getBluetoothData(type: type, id: id);
       final data = _unwrapData(response);
+      final printData = {
+        ...data,
+        'type': type,
+      };
+
+      if (!context.mounted) return;
+      final proceed = await _showPreviewDialog(context, printData);
+      if (proceed != true) return;
+
+      if (!context.mounted) return;
       await _printViaBluetoothDevicePicker(
         context,
-        {
-          ...data,
-          'type': type,
-        },
+        printData,
       );
     } catch (e) {
       _handleError(context, e, fallback: 'Gagal memuat data print Bluetooth.');
     }
+  }
+
+  static Future<bool?> _showPreviewDialog(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) async {
+    final title = _receiptTitle(data);
+    final lines = _buildReceiptLines(data);
+
+    final sb = StringBuffer();
+    // Simulate paper width of 32 chars
+    String padCenter(String text) {
+      if (text.length >= 32) return text;
+      final leftPad = ((32 - text.length) / 2).floor();
+      return ' ' * leftPad + text;
+    }
+
+    sb.writeln(padCenter('HIBISCUS EFSYA'));
+    if (title.isNotEmpty) {
+      sb.writeln(padCenter(title));
+    }
+    sb.writeln('-' * 32);
+
+    for (final line in lines) {
+      if (line == null) {
+        sb.writeln('');
+      } else {
+        sb.writeln(line);
+      }
+    }
+
+    sb.writeln('-' * 32);
+    sb.writeln(padCenter('marketing@hibiscusefsya.com'));
+    sb.writeln();
+    sb.writeln(padCenter('Terima kasih'));
+
+    final receiptText = sb.toString();
+
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Preview Struk'),
+          content: Container(
+            width: double.maxFinite,
+            color: Colors.white,
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              child: Text(
+                receiptText,
+                style: const TextStyle(
+                  fontFamily: 'Courier',
+                  fontSize: 13,
+                  color: Colors.black,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              icon: const Icon(Icons.print),
+              label: const Text('Pilih Printer'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   static Future<void> _printViaBluetoothDevicePicker(
