@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/biaya_provider.dart';
@@ -46,6 +47,22 @@ class _MenuItemData {
   });
 }
 
+class _QuickActionData {
+  final String key;
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _QuickActionData({
+    required this.key,
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.onTap,
+  });
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -67,6 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   _HomeDestination _currentDestination = _HomeDestination.beranda;
+  List<String>? _quickActionOrder;
+  Set<String>? _quickActionsEnabled;
 
   int get _selectedNavIndex {
     final index = _navDestinations.indexOf(_currentDestination);
@@ -106,7 +125,40 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_canShowGudangSwitch(user)) {
         Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       }
+      _loadQuickActionOrder();
+      _loadQuickActionsEnabled();
     });
+  }
+
+  Future<void> _loadQuickActionOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _quickActionOrder = prefs.getStringList('home_quick_action_order');
+    });
+  }
+
+  Future<void> _saveQuickActionOrder(List<String> order) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('home_quick_action_order', order);
+    if (!mounted) return;
+    setState(() => _quickActionOrder = order);
+  }
+
+  Future<void> _loadQuickActionsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList('home_quick_actions_enabled');
+    if (!mounted) return;
+    setState(() {
+      _quickActionsEnabled = stored != null ? Set<String>.from(stored) : null;
+    });
+  }
+
+  Future<void> _saveQuickActionsEnabled(Set<String> enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('home_quick_actions_enabled', enabled.toList());
+    if (!mounted) return;
+    setState(() => _quickActionsEnabled = enabled);
   }
 
   static final List<_MenuItemData> _allMenuItems = [
@@ -117,15 +169,21 @@ class _HomeScreenState extends State<HomeScreen> {
       requiredPermission: 'can_view_dashboard',
     ),
     _MenuItemData(
+      title: 'Kunjungan',
+      icon: Icons.location_on_rounded,
+      screenBuilder: () => const KunjunganListScreen(),
+      requiredPermission: 'can_view_dashboard',
+    ),
+    _MenuItemData(
       title: 'Penjualan',
       icon: Icons.receipt_long_rounded,
       screenBuilder: () => const PenjualanListScreen(),
       requiredPermission: 'can_view_dashboard',
     ),
     _MenuItemData(
-      title: 'Pembelian',
-      icon: Icons.shopping_cart_rounded,
-      screenBuilder: () => const PembelianListScreen(),
+      title: 'Pembayaran',
+      icon: Icons.payments_rounded,
+      screenBuilder: () => const PembayaranListScreen(),
       requiredPermission: 'can_view_dashboard',
     ),
     _MenuItemData(
@@ -135,15 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
       requiredPermission: 'can_view_dashboard',
     ),
     _MenuItemData(
-      title: 'Kunjungan',
-      icon: Icons.location_on_rounded,
-      screenBuilder: () => const KunjunganListScreen(),
-      requiredPermission: 'can_view_dashboard',
-    ),
-    _MenuItemData(
-      title: 'Pembayaran',
-      icon: Icons.payments_rounded,
-      screenBuilder: () => const PembayaranListScreen(),
+      title: 'Pembelian',
+      icon: Icons.shopping_cart_rounded,
+      screenBuilder: () => const PembelianListScreen(),
       requiredPermission: 'can_view_dashboard',
     ),
     _MenuItemData(
@@ -316,8 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // Floating glass navbar overlaid on top of content
             if (_isBottomNavVisible())
               Positioned(
-                left: 28,
-                right: 28,
+                left: 52,
+                right: 52,
                 bottom: MediaQuery.of(context).padding.bottom + 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
@@ -811,6 +863,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppTheme.textPrimaryColor(context),
                         ),
                       ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: user == null
+                            ? null
+                            : () => _showQuickActionCustomizer(user),
+                        child: const Text('Atur'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -837,85 +896,34 @@ class _HomeScreenState extends State<HomeScreen> {
             sliver: SliverToBoxAdapter(
               child: Builder(
                 builder: (ctx) {
-                  final quickCards = <Widget>[];
-                  if (user?.hasPermission('can_create_transaction') == true) {
-                    quickCards.addAll([
-                      _buildQuickAction(
-                        icon: Icons.add_shopping_cart_rounded,
-                        label: 'Penjualan Baru',
-                        iconColor: AppTheme.primaryColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PenjualanListScreen()),
-                        ),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.location_on_rounded,
-                        label: 'Catat Kunjungan',
-                        iconColor: AppTheme.accentColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const KunjunganListScreen()),
-                        ),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.shopping_cart_rounded,
-                        label: 'Pembelian Baru',
-                        iconColor: AppTheme.successColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PembelianListScreen()),
-                        ),
-                      ),
-                    ]);
-                  }
+                  final allAvailable = _getAvailableQuickActions(user);
+                  final enabledSet =
+                      _effectiveEnabledQuickActions(allAvailable);
 
-                  if (user?.hasPermission('can_view_stock') == true) {
-                    quickCards.add(
-                      _buildQuickAction(
-                        icon: Icons.assessment_rounded,
-                        label: 'Cek Stok',
-                        iconColor: AppTheme.warningColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const StokGudangScreen()),
-                        ),
-                      ),
-                    );
-                  }
+                  final filteredCards = allAvailable
+                      .where((e) => enabledSet.contains(e.key))
+                      .toList();
 
-                  final canOpenReport = user?.isUser == true;
-                  if (canOpenReport) {
-                    quickCards.add(
-                      _buildQuickAction(
-                        icon: Icons.summarize_rounded,
-                        label: 'Laporan',
-                        iconColor: AppTheme.primaryColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const ExportReportScreen()),
-                        ),
-                      ),
-                    );
-                  }
-
-                  if (quickCards.isEmpty) {
+                  if (filteredCards.isEmpty) {
                     return const SizedBox.shrink();
                   }
 
+                  final orderedCards =
+                      _applyQuickActionOrder(filteredCards).take(4).toList();
+
                   return Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: quickCards
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: orderedCards
                         .map(
-                          (w) => SizedBox(
-                            width: (MediaQuery.of(context).size.width - 44) / 2,
-                            child: w,
+                          (item) => SizedBox(
+                            width: (MediaQuery.of(context).size.width - 48) / 2,
+                            child: _buildQuickAction(
+                              icon: item.icon,
+                              label: item.label,
+                              iconColor: item.iconColor,
+                              onTap: item.onTap,
+                            ),
                           ),
                         )
                         .toList(),
@@ -931,6 +939,379 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  List<_QuickActionData> _applyQuickActionOrder(List<_QuickActionData> items) {
+    final order = _quickActionOrder;
+    if (order == null || order.isEmpty) return items;
+    final map = {for (final item in items) item.key: item};
+    final result = <_QuickActionData>[];
+    for (final key in order) {
+      final item = map.remove(key);
+      if (item != null) result.add(item);
+    }
+    result.addAll(map.values);
+    return result;
+  }
+
+  Set<String> _effectiveEnabledQuickActions(
+      List<_QuickActionData> allAvailable) {
+    final configured = _quickActionsEnabled;
+
+    // First app run: no stored preference yet, default to first 4 actions.
+    if (configured == null) {
+      return allAvailable.take(4).map((e) => e.key).toSet();
+    }
+
+    // Keep explicit user choice (including empty), but sanitize stale/oversized data.
+    return configured
+        .where((key) => allAvailable.any((item) => item.key == key))
+        .take(4)
+        .toSet();
+  }
+
+  List<_QuickActionData> _getAvailableQuickActions(dynamic user) {
+    final items = <_QuickActionData>[];
+    if (user?.hasPermission('can_create_transaction') == true) {
+      items.addAll([
+        _QuickActionData(
+          key: 'penjualan',
+          icon: Icons.add_shopping_cart_rounded,
+          label: 'Penjualan Baru',
+          iconColor: AppTheme.primaryColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PenjualanListScreen()),
+          ),
+        ),
+        _QuickActionData(
+          key: 'kunjungan',
+          icon: Icons.location_on_rounded,
+          label: 'Catat Kunjungan',
+          iconColor: AppTheme.accentColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const KunjunganListScreen()),
+          ),
+        ),
+        _QuickActionData(
+          key: 'pembelian',
+          icon: Icons.shopping_cart_rounded,
+          label: 'Pembelian Baru',
+          iconColor: AppTheme.successColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PembelianListScreen()),
+          ),
+        ),
+        _QuickActionData(
+          key: 'pembayaran',
+          icon: Icons.payments_rounded,
+          label: 'Pembayaran',
+          iconColor: AppTheme.infoColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PembayaranListScreen()),
+          ),
+        ),
+        _QuickActionData(
+          key: 'biaya',
+          icon: Icons.account_balance_wallet_rounded,
+          label: 'Biaya',
+          iconColor: AppTheme.dangerColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BiayaListScreen()),
+          ),
+        ),
+        _QuickActionData(
+          key: 'penerimaan',
+          icon: Icons.local_shipping_rounded,
+          label: 'Penerimaan',
+          iconColor: AppTheme.successColor,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PenerimaanListScreen()),
+          ),
+        ),
+      ]);
+    }
+    if (user?.hasPermission('can_view_stock') == true) {
+      items.add(_QuickActionData(
+        key: 'stok',
+        icon: Icons.assessment_rounded,
+        label: 'Cek Stok',
+        iconColor: AppTheme.warningColor,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StokGudangScreen()),
+        ),
+      ));
+    }
+    if (user?.isUser == true) {
+      items.add(_QuickActionData(
+        key: 'laporan',
+        icon: Icons.summarize_rounded,
+        label: 'Laporan',
+        iconColor: AppTheme.primaryColor,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ExportReportScreen()),
+        ),
+      ));
+    }
+    return items;
+  }
+
+  Future<void> _showQuickActionCustomizer(dynamic user) async {
+    final allAvailable = _getAvailableQuickActions(user);
+    final enabledSet = Set<String>.from(_quickActionsEnabled ?? {});
+    if (enabledSet.isEmpty) {
+      enabledSet.addAll(allAvailable.take(4).map((e) => e.key));
+    }
+    enabledSet
+        .removeWhere((key) => !allAvailable.any((item) => item.key == key));
+    if (enabledSet.length > 4) {
+      final keep = enabledSet.take(4).toSet();
+      enabledSet
+        ..clear()
+        ..addAll(keep);
+    }
+
+    final initialOrder = _applyQuickActionOrder(
+            allAvailable.where((e) => enabledSet.contains(e.key)).toList())
+        .map((e) => e.key)
+        .toList();
+
+    final result =
+        await showModalBottomSheet<({List<String> order, Set<String> enabled})>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final order = List<String>.from(initialOrder);
+        var enabled = Set<String>.from(enabledSet);
+        final media = MediaQuery.of(ctx);
+        return SafeArea(
+          child: StatefulBuilder(
+            builder: (ctx, setSheetState) {
+              return AnimatedPadding(
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+                child: ConstrainedBox(
+                  constraints:
+                      BoxConstraints(maxHeight: media.size.height * 0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text('Atur Aksi Cepat',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, null),
+                              child: const Text('Batal'),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 12),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pilih Aksi Cepat:',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.glassColor(ctx),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.glassBorderColor(ctx),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: allAvailable.length,
+                                    separatorBuilder: (_, __) => Divider(
+                                      height: 1,
+                                      color: AppTheme.dividerColorOf(ctx),
+                                    ),
+                                    itemBuilder: (_, idx) {
+                                      final item = allAvailable[idx];
+                                      return CheckboxListTile(
+                                        value: enabled.contains(item.key),
+                                        onChanged: (v) {
+                                          setSheetState(() {
+                                            if (v == true) {
+                                              if (enabled.length >= 4) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Maksimal 4 menu cepat.'),
+                                                    backgroundColor:
+                                                        Colors.orange,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              enabled.add(item.key);
+                                              if (!order.contains(item.key)) {
+                                                order.add(item.key);
+                                              }
+                                            } else {
+                                              enabled.remove(item.key);
+                                              order.remove(item.key);
+                                            }
+                                          });
+                                        },
+                                        title: Row(
+                                          children: [
+                                            Icon(item.icon,
+                                                size: 16,
+                                                color: item.iconColor),
+                                            const SizedBox(width: 8),
+                                            Text(item.label,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 11)),
+                                          ],
+                                        ),
+                                        dense: true,
+                                        visualDensity:
+                                            const VisualDensity(vertical: -1.4),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 10),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Terpilih ${enabled.length}/4 menu',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppTheme.textSecondaryColor(ctx),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Urutan Aksi:',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                ReorderableListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: order.length,
+                                  onReorder: (oldIndex, newIndex) {
+                                    setSheetState(() {
+                                      if (newIndex > oldIndex) newIndex -= 1;
+                                      final item = order.removeAt(oldIndex);
+                                      order.insert(newIndex, item);
+                                    });
+                                  },
+                                  itemBuilder: (ctx, index) {
+                                    final itemKey = order[index];
+                                    final item = allAvailable
+                                        .firstWhere((e) => e.key == itemKey);
+                                    return Container(
+                                      key: ValueKey(item.key),
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.glassColor(ctx),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: AppTheme.glassBorderColor(ctx),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.drag_handle,
+                                              size: 16,
+                                              color:
+                                                  AppTheme.textSecondaryColor(
+                                                      ctx)),
+                                          const SizedBox(width: 8),
+                                          Icon(item.icon,
+                                              size: 16, color: item.iconColor),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(item.label,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 11)),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setSheetState(() {
+                                                enabled.remove(item.key);
+                                                order.remove(item.key);
+                                              });
+                                            },
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            iconSize: 16,
+                                            icon:
+                                                const Icon(Icons.close_rounded),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(
+                              ctx,
+                              (order: order, enabled: enabled),
+                            ),
+                            child: const Text('Simpan'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    if (result != null) {
+      await _saveQuickActionOrder(result.order);
+      await _saveQuickActionsEnabled(result.enabled);
+    }
+  }
+
   Widget _buildQuickAction({
     required IconData icon,
     required String label,
@@ -940,13 +1321,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return GlassContainer(
       borderRadius: 16,
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
@@ -956,18 +1337,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, color: iconColor, size: 26),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           Text(
             label,
             style: TextStyle(
               color: AppTheme.textPrimaryColor(context),
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ],
