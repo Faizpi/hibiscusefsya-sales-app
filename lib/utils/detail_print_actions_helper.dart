@@ -245,7 +245,13 @@ class DetailPrintActionsHelper {
 
       final response = await service.getBluetoothData(type: type, id: id);
       final data = _unwrapData(response);
-      await _printViaBluetoothDevicePicker(context, data);
+      await _printViaBluetoothDevicePicker(
+        context,
+        {
+          ...data,
+          'type': type,
+        },
+      );
     } catch (e) {
       _handleError(context, e, fallback: 'Gagal memuat data print Bluetooth.');
     }
@@ -336,17 +342,35 @@ class DetailPrintActionsHelper {
     final generator = Generator(PaperSize.mm58, profile);
     final bytes = <int>[];
 
+    bytes.addAll(generator.reset());
     bytes.addAll(generator.text(
-      'Hibiscus Efsya',
+      'HIBISCUS EFSYA',
       styles: const PosStyles(
-          align: PosAlign.center, bold: true, height: PosTextSize.size2),
+        align: PosAlign.center,
+        bold: true,
+        height: PosTextSize.size2,
+        width: PosTextSize.size2,
+      ),
     ));
+    final title = _receiptTitle(data);
+    if (title.isNotEmpty) {
+      bytes.addAll(generator.text(
+        title,
+        styles: const PosStyles(align: PosAlign.center, bold: true),
+      ));
+    }
     bytes.addAll(generator.hr());
 
-    final lines = _flattenForReceipt(data);
+    final lines = _buildReceiptLines(data);
     for (final line in lines) {
-      bytes.addAll(
-          generator.text(line, styles: const PosStyles(align: PosAlign.left)));
+      if (line == null) {
+        bytes.addAll(generator.feed(1));
+        continue;
+      }
+      bytes.addAll(generator.text(
+        line,
+        styles: const PosStyles(align: PosAlign.left),
+      ));
     }
 
     bytes.addAll(generator.hr());
@@ -359,38 +383,394 @@ class DetailPrintActionsHelper {
     return bytes;
   }
 
-  static List<String> _flattenForReceipt(Map<String, dynamic> data) {
-    final lines = <String>[];
+  static String _receiptTitle(Map<String, dynamic> data) {
+    final type = _stringValue(data['type']).toLowerCase();
+    if (type.contains('penjualan')) return 'INVOICE PENJUALAN';
+    if (type.contains('kunjungan')) return 'STRUK KUNJUNGAN';
+    if (type.contains('pembelian')) return 'INVOICE PEMBELIAN';
+    if (type.contains('biaya')) return 'STRUK BIAYA';
+    return 'STRUK';
+  }
 
-    void walk(String prefix, dynamic value) {
-      if (value == null) return;
-      if (value is Map<String, dynamic>) {
-        value.forEach((k, v) {
-          final key = prefix.isEmpty ? k : '$prefix.$k';
-          walk(key, v);
-        });
-        return;
+  static List<String?> _buildReceiptLines(Map<String, dynamic> data) {
+    final type = _stringValue(data['type']).toLowerCase();
+    if (type.contains('penjualan')) return _buildPenjualanLines(data);
+    if (type.contains('kunjungan')) return _buildKunjunganLines(data);
+    if (type.contains('pembelian')) return _buildPembelianLines(data);
+    if (type.contains('biaya')) return _buildBiayaLines(data);
+    return _buildGenericLines(data);
+  }
+
+  static List<String?> _buildPenjualanLines(Map<String, dynamic> data) {
+    final lines = <String?>[];
+    lines.addAll([
+      _kvLine('Nomor', _stringValue(data['nomor'])),
+      _kvLine('Tanggal', _stringValue(data['tanggal'])),
+      _kvLine('Jatuh Tempo', _stringValue(data['jatuh_tempo'])),
+      _kvLine('Pembayaran', _stringValue(data['pembayaran'])),
+      _kvLine('Pelanggan', _stringValue(data['pelanggan'])),
+    ]);
+    if (_stringValue(data['email']).isNotEmpty) {
+      lines.add(_kvLine('Email', _stringValue(data['email'])));
+    }
+    if (_stringValue(data['alamat_penagihan']).isNotEmpty) {
+      lines.add(_kvLine('Alamat', _stringValue(data['alamat_penagihan'])));
+    }
+    if (_stringValue(data['tipe_harga']).isNotEmpty) {
+      lines.add(_kvLine('Tipe Harga', _stringValue(data['tipe_harga'])));
+    }
+    lines.addAll([
+      _kvLine('Sales', _stringValue(data['sales'])),
+      _kvLine('Gudang', _stringValue(data['gudang'])),
+      _kvLine('Status', _stringValue(data['status'])),
+    ]);
+    if (_stringValue(data['no_referensi']).isNotEmpty) {
+      lines.add(_kvLine('No. Ref', _stringValue(data['no_referensi'])));
+    }
+    if (_stringValue(data['tag']).isNotEmpty) {
+      lines.add(_kvLine('Tag', _stringValue(data['tag'])));
+    }
+    if (_stringValue(data['koordinat']).isNotEmpty) {
+      lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
+    }
+    if (_stringValue(data['memo']).isNotEmpty) {
+      lines.add(_kvLine('Memo', _stringValue(data['memo'])));
+    }
+    lines.add(null);
+
+    final items = _listOfMaps(data['items']);
+    for (final item in items) {
+      lines.add(_wrapText(_itemName(item)));
+      lines.add(_wrapText(_itemQuantityPrice(item)));
+      final diskon = _numValue(item['diskon']);
+      if (diskon > 0) {
+        lines.add(_twoColumn('Diskon', '${diskon.toStringAsFixed(diskon % 1 == 0 ? 0 : 2)}%'));
       }
-      if (value is Map) {
-        value.forEach((k, v) {
-          final key = prefix.isEmpty ? k.toString() : '$prefix.${k.toString()}';
-          walk(key, v);
-        });
-        return;
+      if (_stringValue(item['batch']).isNotEmpty) {
+        lines.add(_kvLine('Batch', _stringValue(item['batch'])));
       }
-      if (value is List) {
-        for (var i = 0; i < value.length; i++) {
-          walk('$prefix[$i]', value[i]);
-        }
-        return;
+      if (_stringValue(item['exp']).isNotEmpty) {
+        lines.add(_kvLine('Exp', _stringValue(item['exp'])));
       }
-      if (prefix.isNotEmpty) {
-        lines.add('$prefix: ${value.toString()}');
+      if (_stringValue(item['deskripsi']).isNotEmpty) {
+        lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
       }
+      lines.add(_twoColumn('Jumlah', _currency(_numValue(item['jumlah']))));
+      lines.add(null);
     }
 
-    walk('', data);
-    return lines.take(120).toList();
+    lines.addAll([
+      _twoColumn('Subtotal', _currency(_numValue(data['subtotal']))),
+      if (_numValue(data['diskon_akhir']) > 0)
+        _twoColumn('Diskon', '- ${_currency(_numValue(data['diskon_akhir']))}'),
+      if (_numValue(data['pajak']) > 0)
+        _twoColumn(
+          'Pajak (${_numValue(data['tax_percentage']).toStringAsFixed(_numValue(data['tax_percentage']) % 1 == 0 ? 0 : 2)}%)',
+          _currency(_numValue(data['pajak'])),
+        ),
+      _twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true),
+    ]);
+    return lines;
+  }
+
+  static List<String?> _buildKunjunganLines(Map<String, dynamic> data) {
+    final lines = <String?>[];
+    lines.addAll([
+      _kvLine('Nomor', _stringValue(data['nomor'])),
+      _kvLine('Tanggal', _stringValue(data['tanggal'])),
+      _kvLine('Tujuan', _stringValue(data['tujuan'])),
+      _kvLine('Gudang', _stringValue(data['gudang'])),
+      _kvLine('Dibuat oleh', _stringValue(data['sales_nama'])),
+      _kvLine('Status', _stringValue(data['status'])),
+    ]);
+    // Kontak (nama dari map kontak)
+    final kontak = data['kontak'];
+    if (kontak is Map) {
+      final kontakNama = _stringValue(kontak['nama']);
+      if (kontakNama.isNotEmpty) lines.add(_kvLine('Kontak', kontakNama));
+    } else if (_stringValue(data['kontak_nama']).isNotEmpty) {
+      lines.add(_kvLine('Kontak', _stringValue(data['kontak_nama'])));
+    }
+    if (_stringValue(data['sales_email']).isNotEmpty) {
+      lines.add(_kvLine('Email Sales', _stringValue(data['sales_email'])));
+    }
+    if (_stringValue(data['sales_alamat']).isNotEmpty) {
+      lines.add(_kvLine('Alamat Sales', _stringValue(data['sales_alamat'])));
+    }
+    if (_stringValue(data['koordinat']).isNotEmpty) {
+      lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
+    }
+    if (_stringValue(data['memo']).isNotEmpty) {
+      lines.add(_kvLine('Memo', _stringValue(data['memo'])));
+    }
+    lines.add(null);
+
+    final items = _listOfMaps(data['items']);
+    for (final item in items) {
+      // Nama produk bisa dari nested 'produk' map
+      String produkNama = _stringValue(item['nama']);
+      if (produkNama.isEmpty) produkNama = _stringValue(item['nama_produk']);
+      if (produkNama.isEmpty) {
+        final produkMap = item['produk'];
+        if (produkMap is Map) produkNama = _stringValue(produkMap['nama_produk']);
+      }
+      if (produkNama.isEmpty) produkNama = '-';
+      lines.add(_wrapText(produkNama));
+
+      // Satuan bisa dari nested 'produk' map
+      String satuan = _stringValue(item['unit']);
+      if (satuan.isEmpty) satuan = _stringValue(item['satuan']);
+      if (satuan.isEmpty) {
+        final produkMap = item['produk'];
+        if (produkMap is Map) satuan = _stringValue(produkMap['satuan']);
+      }
+      if (satuan.isEmpty) satuan = 'Pcs';
+
+      final qty = _numValue(item['qty'] ?? item['kuantitas']);
+      lines.add(_twoColumn('Qty', '${qty.toStringAsFixed(qty % 1 == 0 ? 0 : 2)} $satuan'));
+
+      // Tipe stok
+      final tipeStok = _stringValue(item['tipe_stok']);
+      if (tipeStok.isNotEmpty) lines.add(_kvLine('Tipe', tipeStok));
+
+      if (_stringValue(item['batch']).isNotEmpty) {
+        lines.add(_kvLine('Batch', _stringValue(item['batch'])));
+      }
+      if (_stringValue(item['batch_number']).isNotEmpty) {
+        lines.add(_kvLine('Batch', _stringValue(item['batch_number'])));
+      }
+      if (_stringValue(item['exp']).isNotEmpty) {
+        lines.add(_kvLine('Exp', _stringValue(item['exp'])));
+      }
+      if (_stringValue(item['expired_date']).isNotEmpty) {
+        lines.add(_kvLine('Exp', _stringValue(item['expired_date'])));
+      }
+      if (_stringValue(item['keterangan']).isNotEmpty) {
+        lines.add(_kvLine('Ket', _stringValue(item['keterangan'])));
+      }
+      lines.add(null);
+    }
+    return lines;
+  }
+
+  static List<String?> _buildPembelianLines(Map<String, dynamic> data) {
+    final lines = <String?>[];
+    lines.addAll([
+      _kvLine('Nomor', _stringValue(data['nomor'])),
+      _kvLine('Tanggal', _stringValue(data['tanggal'])),
+      _kvLine('Jatuh Tempo', _stringValue(data['jatuh_tempo'])),
+      _kvLine('Pembayaran', _stringValue(data['pembayaran'])),
+    ]);
+    // Urgensi
+    if (_stringValue(data['urgensi']).isNotEmpty) {
+      lines.add(_kvLine('Urgensi', _stringValue(data['urgensi'])));
+    }
+    lines.addAll([
+      _kvLine('Vendor', _stringValue(data['vendor'])),
+      _kvLine('Dibuat oleh', _stringValue(data['sales'])),
+      _kvLine('Gudang', _stringValue(data['gudang'])),
+      _kvLine('Status', _stringValue(data['status'])),
+    ]);
+    if (_stringValue(data['tahun_anggaran']).isNotEmpty) {
+      lines.add(_kvLine('Thn Anggaran', _stringValue(data['tahun_anggaran'])));
+    }
+    if (_stringValue(data['staf_penyetuju']).isNotEmpty) {
+      lines.add(_kvLine('Staf Penyetuju', _stringValue(data['staf_penyetuju'])));
+    }
+    if (_stringValue(data['memo']).isNotEmpty) {
+      lines.add(_kvLine('Memo', _stringValue(data['memo'])));
+    }
+    lines.add(null);
+
+    final items = _listOfMaps(data['items']);
+    for (final item in items) {
+      lines.add(_wrapText(_itemName(item)));
+      final qty = _numValue(item['qty'] ?? item['kuantitas']);
+      final unit = _stringValue(item['unit']).isNotEmpty
+          ? _stringValue(item['unit'])
+          : (_stringValue(item['satuan']).isNotEmpty ? _stringValue(item['satuan']) : 'Pcs');
+      lines.add(_twoColumn('Qty', '${qty.toStringAsFixed(qty % 1 == 0 ? 0 : 2)} $unit'));
+      // Diskon item (bisa dalam % atau nominal)
+      final diskonPct = _numValue(item['diskon']);
+      if (diskonPct > 0) {
+        lines.add(_twoColumn('Diskon', '${diskonPct.toStringAsFixed(diskonPct % 1 == 0 ? 0 : 2)}%'));
+      }
+      if (_stringValue(item['batch_number']).isNotEmpty) {
+        lines.add(_kvLine('Batch', _stringValue(item['batch_number'])));
+      }
+      if (_stringValue(item['batch']).isNotEmpty) {
+        lines.add(_kvLine('Batch', _stringValue(item['batch'])));
+      }
+      if (_stringValue(item['expired_date']).isNotEmpty) {
+        lines.add(_kvLine('Exp', _stringValue(item['expired_date'])));
+      }
+      if (_stringValue(item['exp']).isNotEmpty) {
+        lines.add(_kvLine('Exp', _stringValue(item['exp'])));
+      }
+      if (_stringValue(item['deskripsi']).isNotEmpty) {
+        lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
+      }
+      lines.add(_twoColumn('Jumlah', _currency(_numValue(item['jumlah']))));
+      lines.add(null);
+    }
+
+    lines.addAll([
+      _twoColumn('Subtotal', _currency(_numValue(data['subtotal']))),
+      if (_numValue(data['diskon_akhir']) > 0)
+        _twoColumn('Diskon', '- ${_currency(_numValue(data['diskon_akhir']))}'),
+      if (_numValue(data['pajak']) > 0)
+        _twoColumn(
+          'Pajak (${_numValue(data['tax_percentage']).toStringAsFixed(_numValue(data['tax_percentage']) % 1 == 0 ? 0 : 2)}%)',
+          _currency(_numValue(data['pajak'])),
+        ),
+      _twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true),
+    ]);
+    return lines;
+  }
+
+  static List<String?> _buildBiayaLines(Map<String, dynamic> data) {
+    final lines = <String?>[];
+    lines.addAll([
+      _kvLine('Nomor', _stringValue(data['nomor'])),
+      _kvLine('Tanggal', _stringValue(data['tanggal'])),
+      _kvLine('Jenis Biaya', _stringValue(data['jenis_biaya'])),
+      _kvLine('Bayar Dari', _stringValue(data['bayar_dari'])),
+    ]);
+    if (_stringValue(data['cara_pembayaran']).isNotEmpty) {
+      lines.add(_kvLine('Cara Bayar', _stringValue(data['cara_pembayaran'])));
+    }
+    lines.add(_kvLine('Penerima', _stringValue(data['penerima'])));
+    if (_stringValue(data['alamat_penagihan']).isNotEmpty) {
+      lines.add(_kvLine('Alamat', _stringValue(data['alamat_penagihan'])));
+    }
+    lines.addAll([
+      _kvLine('Dibuat oleh', _stringValue(data['sales'])),
+      _kvLine('Status', _stringValue(data['status'])),
+    ]);
+    if (_stringValue(data['tag']).isNotEmpty) {
+      lines.add(_kvLine('Tag', _stringValue(data['tag'])));
+    }
+    if (_stringValue(data['koordinat']).isNotEmpty) {
+      lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
+    }
+    if (_stringValue(data['memo']).isNotEmpty) {
+      lines.add(_kvLine('Memo', _stringValue(data['memo'])));
+    }
+    lines.add(null);
+
+    final items = _listOfMaps(data['items']);
+    for (final item in items) {
+      lines.add(_wrapText(_stringValue(item['kategori'])));
+      if (_stringValue(item['deskripsi']).isNotEmpty) {
+        lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
+      }
+      lines.add(_twoColumn('Jumlah', _currency(_numValue(item['jumlah']))));
+      lines.add(null);
+    }
+
+    // Biaya: tampilkan subtotal + pajak + grand total
+    final subtotal = _numValue(data['subtotal']);
+    if (subtotal > 0) {
+      lines.add(_twoColumn('Subtotal', _currency(subtotal)));
+    }
+    if (_numValue(data['pajak']) > 0) {
+      lines.add(_twoColumn(
+        'Pajak (${_numValue(data['tax_percentage']).toStringAsFixed(_numValue(data['tax_percentage']) % 1 == 0 ? 0 : 2)}%)',
+        _currency(_numValue(data['pajak'])),
+      ));
+    }
+    lines.add(_twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true));
+    return lines;
+  }
+
+  static List<String?> _buildGenericLines(Map<String, dynamic> data) {
+    final lines = <String?>[];
+    data.forEach((key, value) {
+      if (key == 'items') return;
+      lines.add(_kvLine(key.replaceAll('_', ' ').toUpperCase(), _stringValue(value)));
+    });
+    return lines;
+  }
+
+  static String _itemName(Map<String, dynamic> item) {
+    final name = _stringValue(item['nama']);
+    if (name.isNotEmpty) return name;
+    return _stringValue(item['nama_produk']).isNotEmpty
+        ? _stringValue(item['nama_produk'])
+        : '-';
+  }
+
+  static String _itemQuantityPrice(Map<String, dynamic> item) {
+    final qty = _numValue(item['qty']);
+    final unit = _stringValue(item['unit']).isNotEmpty ? _stringValue(item['unit']) : 'Pcs';
+    final harga = _numValue(item['harga']);
+    final qtyText = qty.toStringAsFixed(qty % 1 == 0 ? 0 : 2);
+    return '$qtyText $unit x ${_currency(harga)}';
+  }
+
+  static String _kvLine(String label, String value) {
+    return _twoColumn(label, value.isEmpty ? '-' : value);
+  }
+
+  static String _twoColumn(String left, String right, {bool boldRight = false}) {
+    const width = 32;
+    final leftText = left.trim();
+    final rightText = right.trim().isEmpty ? '-' : right.trim();
+    final available = width - leftText.length - rightText.length;
+    if (available <= 1) {
+      return '$leftText $rightText';
+    }
+    return '$leftText${' ' * available}$rightText';
+  }
+
+  static String _wrapText(String value, {int width = 32}) {
+    final text = value.trim();
+    if (text.isEmpty) return '';
+    if (text.length <= width) return text;
+
+    final words = text.split(RegExp(r'\s+'));
+    final lines = <String>[];
+    var current = '';
+    for (final word in words) {
+      if (current.isEmpty) {
+        current = word;
+        continue;
+      }
+      if ((current.length + 1 + word.length) <= width) {
+        current = '$current $word';
+      } else {
+        lines.add(current);
+        current = word;
+      }
+    }
+    if (current.isNotEmpty) lines.add(current);
+    return lines.join('\n');
+  }
+
+  static List<Map<String, dynamic>> _listOfMaps(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((entry) => entry.map((k, v) => MapEntry(k.toString(), v)))
+        .toList();
+  }
+
+  static String _stringValue(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value.trim();
+    if (value is num || value is bool) return value.toString();
+    return value.toString().trim();
+  }
+
+  static num _numValue(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static String _currency(num value) {
+    return 'Rp ${value.toStringAsFixed(value % 1 == 0 ? 0 : 2).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')}' ;
   }
 
   static Future<Map<String, String>?> _getQrPayload(
