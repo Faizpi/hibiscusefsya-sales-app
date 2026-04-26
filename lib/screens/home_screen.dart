@@ -311,7 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openNotifications(List<Map<String, String>> notifications) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
         return SafeArea(
@@ -332,12 +331,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg(ctx),
+                    color: Theme.of(ctx).colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppTheme.glassBorderColor(ctx),
-                      width: 1,
-                    ),
                   ),
                   child: notifications.isEmpty
                       ? const Padding(
@@ -1172,7 +1167,6 @@ class _HomeScreenState extends State<HomeScreen> {
         await showModalBottomSheet<({List<String> order, Set<String> enabled})>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
         final order = List<String>.from(initialOrder);

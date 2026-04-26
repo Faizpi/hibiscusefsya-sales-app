@@ -321,7 +321,30 @@ class DetailPrintActionsHelper {
       if (line == null) {
         previewWidgets.add(const SizedBox(height: 6));
       } else {
-        previewWidgets.add(Text(line, style: mono));
+        // Detect two-column format (key on left, value on right)
+        // _twoColumn produces strings with 2+ consecutive spaces as separator
+        final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
+        if (match != null) {
+          previewWidgets.add(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(match.group(1)!, style: mono),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    match.group(2)!,
+                    style: mono,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          previewWidgets.add(Text(line, style: mono));
+        }
       }
     }
 
@@ -340,7 +363,6 @@ class DetailPrintActionsHelper {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) {
         final media = MediaQuery.of(ctx);
@@ -367,7 +389,7 @@ class DetailPrintActionsHelper {
                   Flexible(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F7),
+                        color: Theme.of(ctx).colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -405,7 +427,7 @@ class DetailPrintActionsHelper {
                             ),
                           ),
                           // Divider
-                          Container(height: 1, color: const Color(0xFFE0E0E0)),
+                          const Divider(height: 1),
                           // Receipt paper area
                           Flexible(
                             child: SingleChildScrollView(
@@ -514,7 +536,6 @@ class DetailPrintActionsHelper {
     if (!context.mounted) return;
     final selected = await showModalBottomSheet<BluetoothDevice>(
       context: context,
-      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withAlpha(120),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -534,7 +555,7 @@ class DetailPrintActionsHelper {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(ctx).scaffoldBackgroundColor,
+                  color: Theme.of(ctx).colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
