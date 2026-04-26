@@ -1046,7 +1046,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ));
     }
-    if (user?.isUser == true) {
+    final canViewLaporan = user?.isUser == true ||
+        user?.hasPermission('can_export_report') == true;
+    if (canViewLaporan) {
       items.add(_QuickActionData(
         key: 'laporan',
         icon: Icons.summarize_rounded,
