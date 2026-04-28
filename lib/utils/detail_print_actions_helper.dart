@@ -384,14 +384,7 @@ class DetailPrintActionsHelper {
       height: 1.3,
       letterSpacing: 0.5,
     );
-    const dividerStyle = TextStyle(
-      fontFamily: 'RobotoMono',
-      fontSize: 11,
-      color: Color(0xFF888888),
-      letterSpacing: 0.2,
-    );
-
-    final dividerCount = is80mm ? 42 : 28;
+    final dividerCount = is80mm ? 48 : 32;
 
     previewWidgets.add(
       Text('HIBISCUS EFSYA', style: monoBigBold, textAlign: TextAlign.center),
@@ -403,7 +396,7 @@ class DetailPrintActionsHelper {
       );
     }
     previewWidgets.add(const SizedBox(height: 6));
-    previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
     previewWidgets.add(const SizedBox(height: 4));
 
     for (final line in lines) {
@@ -411,7 +404,7 @@ class DetailPrintActionsHelper {
         previewWidgets.add(const SizedBox(height: 6));
       } else if (line == '---HR---') {
         previewWidgets.add(const SizedBox(height: 4));
-        previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
+        previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
         previewWidgets.add(const SizedBox(height: 4));
       } else {
         final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
@@ -440,7 +433,7 @@ class DetailPrintActionsHelper {
     }
 
     previewWidgets.add(const SizedBox(height: 4));
-    previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
     previewWidgets.add(const SizedBox(height: 8));
     // QR Code website pelanggan
     previewWidgets.add(
@@ -717,7 +710,7 @@ class DetailPrintActionsHelper {
       _snack(context,
           'Berhasil kirim data ke ${selected.name ?? selected.address}');
     } catch (e) {
-      _snack(context, 'Gagal print bluetooth: $e', isError: true);
+      _snack(context, 'Gagal print bluetooth. Pastikan printer menyala & terhubung.', isError: true);
     } finally {
       await connection?.finish();
     }
