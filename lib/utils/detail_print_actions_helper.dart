@@ -384,8 +384,6 @@ class DetailPrintActionsHelper {
       height: 1.3,
       letterSpacing: 0.5,
     );
-    final dividerCount = is80mm ? 48 : 32;
-
     previewWidgets.add(
       Text('HIBISCUS EFSYA', style: monoBigBold, textAlign: TextAlign.center),
     );
@@ -396,7 +394,7 @@ class DetailPrintActionsHelper {
       );
     }
     previewWidgets.add(const SizedBox(height: 6));
-    previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
+    previewWidgets.add(Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
     previewWidgets.add(const SizedBox(height: 4));
 
     for (final line in lines) {
@@ -404,7 +402,7 @@ class DetailPrintActionsHelper {
         previewWidgets.add(const SizedBox(height: 6));
       } else if (line == '---HR---') {
         previewWidgets.add(const SizedBox(height: 4));
-        previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
+        previewWidgets.add(Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
         previewWidgets.add(const SizedBox(height: 4));
       } else {
         final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
@@ -433,7 +431,7 @@ class DetailPrintActionsHelper {
     }
 
     previewWidgets.add(const SizedBox(height: 4));
-    previewWidgets.add(Text('-' * dividerCount, style: mono, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.visible));
+    previewWidgets.add(Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
     previewWidgets.add(const SizedBox(height: 8));
     // QR Code website pelanggan
     previewWidgets.add(
