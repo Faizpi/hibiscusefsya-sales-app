@@ -463,6 +463,10 @@ class DetailPrintActionsHelper {
     );
     previewWidgets.add(const SizedBox(height: 4));
     previewWidgets.add(
+      Text('Oficial No: +6285195550202', style: monoCenter, textAlign: TextAlign.center),
+    );
+    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(
       Text('Terima kasih', style: monoCenter.copyWith(fontWeight: FontWeight.w600), textAlign: TextAlign.center),
     );
     previewWidgets.add(const SizedBox(height: 12));
@@ -775,6 +779,11 @@ class DetailPrintActionsHelper {
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
       'marketing@hibiscusefsya.com',
+      styles: const PosStyles(align: PosAlign.center),
+    ));
+    bytes.addAll(generator.feed(1));
+    bytes.addAll(generator.text(
+      'Oficial No: +6285195550202',
       styles: const PosStyles(align: PosAlign.center),
     ));
     bytes.addAll(generator.feed(1));
