@@ -15,6 +15,7 @@ import '../services/api_service.dart';
 import '../services/print_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/camera_lampiran_capture_screen.dart';
 
 class DetailPrintActionsHelper {
   static List<Widget> buildAppBarActions({
@@ -43,7 +44,60 @@ class DetailPrintActionsHelper {
         icon: const Icon(Icons.qr_code),
         onPressed: () => showQrDialog(context, type: type, id: id),
       ),
+      IconButton(
+        tooltip: 'Tambah Lampiran',
+        icon: const Icon(Icons.add_a_photo_outlined),
+        onPressed: () => _addLampiran(context, type: type, id: id),
+      ),
     ];
+  }
+
+  static Future<void> _addLampiran(
+    BuildContext context, {
+    required String type,
+    required int id,
+  }) async {
+    final result = await Navigator.push<CameraLampiranResult>(
+      context,
+      MaterialPageRoute(builder: (_) => const CameraLampiranCaptureScreen()),
+    );
+    if (result == null || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if ((auth.token ?? '').isEmpty) {
+        Navigator.pop(context);
+        _snack(context, 'Sesi login tidak valid.', isError: true);
+        return;
+      }
+      
+      final api = ApiService(token: auth.token);
+      await api.postMultipart(
+        '$type/$id',
+        fields: {
+          '_method': 'PUT',
+        },
+        fileListPaths: {
+          'lampiran[]': [result.imagePath]
+        },
+      );
+
+      if (!context.mounted) return;
+      Navigator.pop(context); // Tutup loading
+      _snack(context, 'Lampiran berhasil ditambahkan!');
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // Tutup loading
+      _handleError(context, e, fallback: 'Gagal menambah lampiran.');
+    }
   }
 
   static Future<void> showQrDialog(
