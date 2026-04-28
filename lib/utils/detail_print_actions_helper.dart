@@ -762,7 +762,7 @@ class DetailPrintActionsHelper {
     // QR Code website pelanggan
     bytes.addAll(generator.qrcode(
       'https://customer.hibiscusefsya.com/',
-      size: QRSize.Size6,
+      size: QRSize.size6,
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
