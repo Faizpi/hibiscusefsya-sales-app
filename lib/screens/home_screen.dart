@@ -639,17 +639,11 @@ class _HomeScreenState extends State<HomeScreen> {
         : menuItems;
     final hasMoreMenus = menuItems.length > _mainMenuCount;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        await Provider.of<DashboardProvider>(context, listen: false)
-            .fetchDashboard();
-      },
-      child: CustomScrollView(
-        slivers: [
-          // Clean greeting header GÇö on scaffold bg, not gradient
-          SliverToBoxAdapter(
-            child: SafeArea(
-              bottom: false,
+    // ── Fixed header (does NOT scroll) ──────────────────────────────────
+    final header = Container(
+      color: AppTheme.scaffoldBg(context),
+      child: SafeArea(
+        bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                 child: Column(
@@ -805,8 +799,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          ),
+    );
 
+    // ── Scrollable body ──────────────────────────────────────────────────
+    final body = RefreshIndicator(
+      onRefresh: () async {
+        await Provider.of<DashboardProvider>(context, listen: false)
+            .fetchDashboard();
+      },
+      child: CustomScrollView(
+        slivers: [
           // Menu section header
           SliverToBoxAdapter(
             child: Padding(
@@ -1016,6 +1018,13 @@ class _HomeScreenState extends State<HomeScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
+    );
+
+    return Column(
+      children: [
+        header,
+        Expanded(child: body),
+      ],
     );
   }
 

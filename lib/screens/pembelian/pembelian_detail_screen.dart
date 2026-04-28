@@ -280,6 +280,20 @@ class _PembelianDetailScreenState extends State<PembelianDetailScreen> {
           // Lampiran
           if (d.lampiranPaths != null && d.lampiranPaths!.isNotEmpty)
             LampiranSection(paths: d.lampiranPaths!),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add_a_photo),
+            label: const Text('Tambah Lampiran via Kamera'),
+            onPressed: () async {
+              await DetailPrintActionsHelper.uploadLampiran(
+                context,
+                type: 'pembelian',
+                id: widget.id,
+              );
+              _loadDetail();
+            },
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

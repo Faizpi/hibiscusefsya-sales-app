@@ -6,7 +6,6 @@ import '../../providers/gudang_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
-import '../../widgets/searchable_dropdown_form_field.dart';
 import '../../widgets/glass_container.dart';
 
 class PembayaranCreateScreen extends StatefulWidget {
@@ -18,14 +17,13 @@ class PembayaranCreateScreen extends StatefulWidget {
 
 class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _invoiceController = TextEditingController();
   final _jumlahBayarController = TextEditingController();
   final _keteranganController = TextEditingController();
 
   DateTime _tglPembayaran = DateTime.now();
   String _metodePembayaran = 'Transfer Bank';
   int? _gudangId;
-  _InvoiceOption? _selectedInvoice;
+  Set<int> selectedInvoiceIds = {};
   List<_InvoiceOption> _invoiceOptions = [];
   List<PlatformFile> _lampiran = [];
   bool _isLoadingInvoices = false;
@@ -41,26 +39,27 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
 
   @override
   void dispose() {
-    _invoiceController.dispose();
     _jumlahBayarController.dispose();
     _keteranganController.dispose();
     super.dispose();
   }
 
+  double get _totalSelectedSisa => _invoiceOptions
+      .where((inv) => selectedInvoiceIds.contains(inv.id))
+      .fold<double>(0, (sum, inv) => sum + inv.sisaTagihan);
+
   Future<void> _loadInvoicesByGudang(int? gudangId) async {
     if (gudangId == null) {
       setState(() {
         _invoiceOptions = [];
-        _selectedInvoice = null;
-        _invoiceController.clear();
+        selectedInvoiceIds.clear();
       });
       return;
     }
 
     setState(() {
       _isLoadingInvoices = true;
-      _selectedInvoice = null;
-      _invoiceController.clear();
+      selectedInvoiceIds.clear();
     });
 
     try {
@@ -76,13 +75,23 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
                   : int.tryParse('${row['id']}') ?? 0,
               nomor: (row['nomor'] ?? '').toString(),
               pelanggan: (row['pelanggan'] ?? '').toString(),
+              tglTransaksi: (row['tgl_transaksi'] ?? '').toString(),
+              syaratPembayaran: (row['syarat_pembayaran'] ?? '').toString(),
+              totalTagihan: double.tryParse('${row['grand_total'] ?? 0}') ?? 0,
+              sudahBayar: double.tryParse(
+                      '${row['total_bayar'] ?? row['sudah_bayar'] ?? 0}') ??
+                  0,
+              sisaTagihan: double.tryParse(
+                      '${row['sisa_tagihan'] ?? row['sisa'] ?? row['sisa_pembayaran'] ?? 0}') ??
+                  0,
             ),
           )
-          .where((e) => e.id > 0)
+          .where((e) => e.id > 0 && e.sisaTagihan > 0)
           .toList();
 
       if (!mounted) return;
       setState(() => _invoiceOptions = mapped);
+      _updateTotalBayar();
     } catch (_) {
       if (!mounted) return;
       setState(() => _invoiceOptions = []);
@@ -93,14 +102,28 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
     }
   }
 
+  void _updateTotalBayar() {
+    setState(() {
+      _jumlahBayarController.text = _totalSelectedSisa.toStringAsFixed(0);
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (selectedInvoiceIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih minimal satu invoice'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     setState(() => _isSubmitting = true);
     try {
       final provider = Provider.of<PembayaranProvider>(context, listen: false);
       final data = {
-        'penjualan_id':
-            _selectedInvoice?.id ?? int.tryParse(_invoiceController.text),
+        'penjualan_ids': selectedInvoiceIds.toList(),
         'tgl_pembayaran': _tglPembayaran.toIso8601String().split('T')[0],
         'metode_pembayaran': _metodePembayaran,
         'jumlah_bayar': double.tryParse(_jumlahBayarController.text) ?? 0,
@@ -109,9 +132,11 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
 
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value != null) fields[key] = value.toString();
-        });
+        fields['penjualan_ids'] = selectedInvoiceIds.join(',');
+        fields['tgl_pembayaran'] = data['tgl_pembayaran'].toString();
+        fields['metode_pembayaran'] = data['metode_pembayaran'].toString();
+        fields['jumlah_bayar'] = data['jumlah_bayar'].toString();
+        fields['keterangan'] = data['keterangan'].toString();
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
         await provider.createPembayaranMultipart(
@@ -174,33 +199,184 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Invoice Penjualan
-            SearchableDropdownFormField<_InvoiceOption>(
-              value: _selectedInvoice,
-              enabled: _gudangId != null && !_isLoadingInvoices,
-              labelText: 'Invoice Penjualan *',
-              hintText: _gudangId == null
-                  ? 'Pilih gudang dulu'
-                  : (_isLoadingInvoices
-                      ? 'Memuat invoice...'
-                      : 'Pilih atau ketik invoice...'),
-              leadingIcon: const Icon(Icons.receipt_long, size: 20),
-              items: _invoiceOptions,
-              itemAsString: (invoice) {
-                final nomor = invoice.nomor.isNotEmpty
-                    ? invoice.nomor
-                    : 'INV #${invoice.id}';
-                final pelanggan = invoice.pelanggan;
-                return pelanggan.isNotEmpty ? '$nomor - $pelanggan' : nomor;
-              },
-              onChanged: (selected) {
-                setState(() {
-                  _selectedInvoice = selected;
-                  _invoiceController.text = selected?.id.toString() ?? '';
-                });
-              },
-              validator: (v) => v == null ? 'Wajib diisi' : null,
-            ),
+            // Invoice Penjualan - Multi-select with checkboxes
+            if (_gudangId == null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.infoColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 18, color: AppTheme.infoColor),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pilih gudang untuk melihat daftar invoice',
+                        style:
+                            TextStyle(color: AppTheme.infoColor, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_isLoadingInvoices)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_invoiceOptions.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.successColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        size: 18, color: AppTheme.successColor),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Semua invoice sudah lunas di gudang ini',
+                        style: TextStyle(
+                            color: AppTheme.successColor, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Select All checkbox
+                  CheckboxListTile(
+                    value:
+                        selectedInvoiceIds.length == _invoiceOptions.length &&
+                            _invoiceOptions.isNotEmpty,
+                    onChanged: (v) {
+                      setState(() {
+                        if (v == true) {
+                          selectedInvoiceIds =
+                              _invoiceOptions.map((e) => e.id).toSet();
+                        } else {
+                          selectedInvoiceIds.clear();
+                        }
+                      });
+                      _updateTotalBayar();
+                    },
+                    title: const Text('Pilih Semua Invoice',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 12)),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const Divider(height: 12),
+                  // Invoice list
+                  Container(
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: AppTheme.glassBorderColor(context)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _invoiceOptions.length,
+                      separatorBuilder: (_, __) => const Divider(height: 0),
+                      itemBuilder: (ctx, idx) {
+                        final inv = _invoiceOptions[idx];
+                        final isSelected = selectedInvoiceIds.contains(inv.id);
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                selectedInvoiceIds.add(inv.id);
+                              } else {
+                                selectedInvoiceIds.remove(inv.id);
+                              }
+                            });
+                            _updateTotalBayar();
+                          },
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                inv.nomor.isNotEmpty
+                                    ? inv.nomor
+                                    : 'INV #${inv.id}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 12),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                inv.pelanggan,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          subtitle: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                inv.tglTransaksi,
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                              Text(
+                                'Sisa: Rp ${inv.sisaTagihan.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                    fontSize: 10),
+                              ),
+                            ],
+                          ),
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 0),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Total selected
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withAlpha(10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Piutang Terpilih:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondaryColor(context),
+                          ),
+                        ),
+                        Text(
+                          'Rp ${_totalSelectedSisa.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 12),
 
             // Tanggal Pembayaran
@@ -224,14 +400,16 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Jumlah Bayar
+            // Jumlah Bayar - read-only, auto-filled from selected total
             TextFormField(
               controller: _jumlahBayarController,
               decoration: const InputDecoration(
                 labelText: 'Jumlah Bayar (Rp) *',
                 prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                helperText: 'Auto-filled dari total piutang terpilih',
               ),
               keyboardType: TextInputType.number,
+              readOnly: true,
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Wajib diisi';
                 if ((double.tryParse(v) ?? 0) <= 0) return 'Harus lebih dari 0';
@@ -282,10 +460,20 @@ class _InvoiceOption {
   final int id;
   final String nomor;
   final String pelanggan;
+  final String tglTransaksi;
+  final String syaratPembayaran;
+  final double totalTagihan;
+  final double sudahBayar;
+  final double sisaTagihan;
 
   _InvoiceOption({
     required this.id,
     required this.nomor,
     required this.pelanggan,
+    required this.tglTransaksi,
+    required this.syaratPembayaran,
+    required this.totalTagihan,
+    required this.sudahBayar,
+    required this.sisaTagihan,
   });
 }

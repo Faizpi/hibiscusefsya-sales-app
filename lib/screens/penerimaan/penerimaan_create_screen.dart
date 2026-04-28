@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/penerimaan_barang_provider.dart';
-import '../../providers/pembelian_provider.dart';
 import '../../providers/gudang_provider.dart';
-import '../../models/pembelian_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
-import '../../widgets/searchable_dropdown_form_field.dart';
 import '../../widgets/glass_container.dart';
 
 class PenerimaanCreateScreen extends StatefulWidget {
@@ -25,17 +22,18 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
 
   DateTime _tglPenerimaan = DateTime.now();
   int? _gudangId;
-  PembelianModel? _selectedPO;
+  Set<int> selectedPOIds = {};
+  List<_PoOption> _poOptions = [];
   final List<_ItemRow> _items = [];
   List<PlatformFile> _lampiran = [];
   bool _isSubmitting = false;
+  bool _isLoadingPO = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
-      Provider.of<PembelianProvider>(context, listen: false).fetchPembelian();
     });
   }
 
@@ -46,20 +44,95 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
     super.dispose();
   }
 
-  void _onPOSelected(PembelianModel? po) {
+  Future<void> _loadPOsByGudang(int? gudangId) async {
+    if (gudangId == null) {
+      setState(() {
+        _poOptions = [];
+        selectedPOIds.clear();
+        _items.clear();
+      });
+      return;
+    }
+
     setState(() {
-      _selectedPO = po;
+      _isLoadingPO = true;
+      _poOptions = [];
+      selectedPOIds.clear();
       _items.clear();
-      if (po?.items != null) {
-        for (final item in po!.items!) {
+    });
+
+    try {
+      final provider =
+          Provider.of<PenerimaanBarangProvider>(context, listen: false);
+      final rawList = await provider.getPembelianByGudang(gudangId);
+      final mapped = rawList
+          .whereType<Map>()
+          .map((raw) => Map<String, dynamic>.from(raw))
+          .map(
+            (row) => _PoOption(
+              id: row['id'] is int
+                  ? row['id'] as int
+                  : int.tryParse('${row['id']}') ?? 0,
+              nomor: (row['nomor'] ?? '').toString(),
+              tglTransaksi: (row['tgl_transaksi'] ?? '').toString(),
+            ),
+          )
+          .where((po) => po.id > 0)
+          .toList();
+
+      if (!mounted) return;
+      setState(() => _poOptions = mapped);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _poOptions = []);
+    } finally {
+      if (mounted) setState(() => _isLoadingPO = false);
+    }
+  }
+
+  Future<void> _updateSelectedPOs() async {
+    if (selectedPOIds.isEmpty) {
+      setState(() => _items.clear());
+      return;
+    }
+
+    setState(() => _isLoadingPO = true);
+
+    try {
+      _items.clear();
+      final provider =
+          Provider.of<PenerimaanBarangProvider>(context, listen: false);
+      for (final poId in selectedPOIds) {
+        final detail = await provider.getPembelianDetail(poId);
+        final detailItems = (detail['items'] as List? ?? const [])
+            .whereType<Map>()
+            .map((raw) => Map<String, dynamic>.from(raw))
+            .toList();
+        for (final item in detailItems) {
           _items.add(_ItemRow()
-            ..produkId = item.produkId
-            ..namaProduk = item.namaProduk ?? 'Produk #${item.produkId}'
-            ..qtyPesan = (item.kuantitas ?? 0).toDouble()
-            ..qtyDiterima = (item.kuantitas ?? 0).toDouble());
+            ..produkId = int.tryParse('${item['produk_id']}')
+            ..namaProduk =
+                (item['nama_produk'] ?? 'Produk #${item['produk_id']}')
+                    .toString()
+            ..qtyPesan = double.tryParse(
+                    '${item['qty_pesan'] ?? item['kuantitas'] ?? 0}') ??
+                0
+            ..qtyDiterima =
+                double.tryParse('${item['qty_diterima'] ?? 0}') ?? 0);
         }
       }
-    });
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Gagal memuat detail PO: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingPO = false);
+    }
   }
 
   int get _totalItemDiterima {
@@ -72,9 +145,9 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedPO == null) {
+    if (selectedPOIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Pilih PO terlebih dahulu.'),
+          content: Text('Pilih minimal satu PO.'),
           backgroundColor: Colors.red));
       return;
     }
@@ -83,7 +156,7 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
       final provider =
           Provider.of<PenerimaanBarangProvider>(context, listen: false);
       final data = {
-        'pembelian_id': _selectedPO!.id,
+        'pembelian_ids': selectedPOIds.toList(),
         'gudang_id': _gudangId,
         'tgl_penerimaan': _tglPenerimaan.toIso8601String().split('T')[0],
         'no_surat_jalan': _noSuratJalanController.text,
@@ -108,19 +181,17 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
 
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value == null) return;
-          if (key == 'items') {
-            final items = value as List;
-            for (int idx = 0; idx < items.length; idx++) {
-              (items[idx] as Map).forEach((k, v) {
-                if (v != null) fields['items[$idx][$k]'] = v.toString();
-              });
-            }
-          } else {
-            fields[key] = value.toString();
-          }
-        });
+        fields['pembelian_ids'] = selectedPOIds.join(',');
+        fields['gudang_id'] = data['gudang_id'].toString();
+        fields['tgl_penerimaan'] = data['tgl_penerimaan'].toString();
+        fields['no_surat_jalan'] = data['no_surat_jalan'].toString();
+        fields['keterangan'] = data['keterangan'].toString();
+        final items = data['items'] as List;
+        for (int idx = 0; idx < items.length; idx++) {
+          (items[idx] as Map).forEach((k, v) {
+            if (v != null) fields['items[$idx][$k]'] = v.toString();
+          });
+        }
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
         await provider.createPenerimaanMultipart(
@@ -157,7 +228,7 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             // Gudang
             Consumer<GudangProvider>(
@@ -173,34 +244,146 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
                       .map((g) => DropdownMenuItem(
                           value: g.id, child: Text(g.namaGudang)))
                       .toList(),
-                  onChanged: (v) => setState(() => _gudangId = v),
+                  onChanged: (v) {
+                    setState(() => _gudangId = v);
+                    _loadPOsByGudang(v);
+                  },
                   validator: (v) => v == null ? 'Pilih gudang' : null,
                 );
               },
             ),
             const SizedBox(height: 12),
 
-            // Pembelian (PO)
-            Consumer<PembelianProvider>(
-              builder: (ctx, pembelianProvider, _) {
-                final poList = pembelianProvider.items
-                    .where((p) => p.status == 'Approved')
-                    .toList();
-                return SearchableDropdownFormField<PembelianModel>(
-                  value: _selectedPO,
-                  labelText: 'Pembelian (PO) *',
-                  hintText: 'Pilih atau ketik nomor PO...',
-                  items: poList,
-                  itemAsString: (p) {
-                    final nomor = p.nomor ?? 'PO #${p.id}';
-                    final pembuat = p.userName;
-                    return pembuat == '-' ? nomor : '$nomor - $pembuat';
-                  },
-                  onChanged: _onPOSelected,
-                  validator: (v) => v == null ? 'Pilih PO' : null,
-                );
-              },
-            ),
+            // Pembelian (PO) - Multi-select with checkboxes
+            if (_gudangId == null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.infoColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 18, color: AppTheme.infoColor),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pilih gudang untuk melihat daftar PO',
+                        style:
+                            TextStyle(color: AppTheme.infoColor, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_isLoadingPO)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_poOptions.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.successColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        size: 18, color: AppTheme.successColor),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tidak ada PO di gudang ini',
+                        style: TextStyle(
+                            color: AppTheme.successColor, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.glassColor(context),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.glassBorderColor(context),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+                      child: CheckboxListTile(
+                        value: selectedPOIds.length == _poOptions.length &&
+                            _poOptions.isNotEmpty,
+                        onChanged: (v) {
+                          setState(() {
+                            if (v == true) {
+                              selectedPOIds =
+                                  _poOptions.map((e) => e.id).toSet();
+                            } else {
+                              selectedPOIds.clear();
+                            }
+                          });
+                          _updateSelectedPOs();
+                        },
+                        title: const Text('Pilih Semua PO',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 12)),
+                        dense: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        controlAffinity: ListTileControlAffinity.trailing,
+                      ),
+                    ),
+                    Divider(
+                      height: 1,
+                      color: AppTheme.dividerColorOf(context),
+                    ),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _poOptions.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: AppTheme.dividerColorOf(context),
+                      ),
+                      itemBuilder: (_, idx) {
+                        final po = _poOptions[idx];
+                        return CheckboxListTile(
+                          value: selectedPOIds.contains(po.id),
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                selectedPOIds.add(po.id);
+                              } else {
+                                selectedPOIds.remove(po.id);
+                              }
+                            });
+                            _updateSelectedPOs();
+                          },
+                          title: Text(
+                              po.nomor.isNotEmpty ? po.nomor : 'PO #${po.id}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500, fontSize: 12)),
+                          subtitle: Text(po.tglTransaksi),
+                          dense: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 2),
+                          controlAffinity: ListTileControlAffinity.trailing,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 12),
 
             // Tanggal Penerimaan
@@ -367,4 +550,16 @@ class _ItemRow {
   DateTime? expDate;
   final batchController = TextEditingController();
   final keteranganController = TextEditingController();
+}
+
+class _PoOption {
+  final int id;
+  final String nomor;
+  final String tglTransaksi;
+
+  _PoOption({
+    required this.id,
+    required this.nomor,
+    required this.tglTransaksi,
+  });
 }

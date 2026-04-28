@@ -170,8 +170,14 @@ class ExportOptionsModel {
                   ?.toString() ??
               '';
           if (value.isEmpty) continue;
-          final label = _pick(map, const ['label', 'name', 'text', 'title'])
-                  ?.toString() ??
+          final label = _pick(map, const [
+                'label',
+                'name',
+                'nama',
+                'nama_gudang',
+                'text',
+                'title'
+              ])?.toString() ??
               _humanize(value);
           result.add(ExportOptionItem(value: value, label: label));
         }

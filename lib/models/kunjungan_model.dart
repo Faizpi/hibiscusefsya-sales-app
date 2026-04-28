@@ -116,6 +116,8 @@ class KunjunganItemModel {
   final String? namaProduk;
   final int? kuantitas;
   final String? tipeStok;
+  final String? batchNumber;
+  final String? expiredDate;
   final String? keterangan;
   final ProdukModel? produk;
 
@@ -126,6 +128,8 @@ class KunjunganItemModel {
     this.namaProduk,
     this.kuantitas,
     this.tipeStok,
+    this.batchNumber,
+    this.expiredDate,
     this.keterangan,
     this.produk,
   });
@@ -138,6 +142,8 @@ class KunjunganItemModel {
       namaProduk: json['nama_produk'],
       kuantitas: json['kuantitas'] ?? json['jumlah'],
       tipeStok: json['tipe_stok'] ?? json['stock_type'],
+      batchNumber: json['batch_number'],
+      expiredDate: json['expired_date'],
       keterangan: json['keterangan'],
       produk:
           json['produk'] != null ? ProdukModel.fromJson(json['produk']) : null,
@@ -148,6 +154,8 @@ class KunjunganItemModel {
         'produk_id': produkId,
         'kuantitas': kuantitas,
         'tipe_stok': tipeStok,
+        'batch_number': batchNumber,
+        'expired_date': expiredDate,
         'keterangan': keterangan,
       };
 }

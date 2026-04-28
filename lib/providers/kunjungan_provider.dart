@@ -67,23 +67,25 @@ class KunjunganProvider with ChangeNotifier {
     return KunjunganModel.fromJson(json);
   }
 
-  Future<void> createKunjungan(Map<String, dynamic> data) async {
+  Future<KunjunganModel> createKunjungan(Map<String, dynamic> data) async {
     final api = ApiService(token: _token);
-    await api.post('kunjungan', body: data);
+    final response = await api.post('kunjungan', body: data);
     await fetchKunjungan(refresh: true);
+    return KunjunganModel.fromJson(response['data'] ?? response);
   }
 
-  Future<void> createKunjunganMultipart({
+  Future<KunjunganModel> createKunjunganMultipart({
     required Map<String, String> fields,
     List<String>? lampiran,
   }) async {
     final api = ApiService(token: _token);
-    await api.postMultipart(
+    final response = await api.postMultipart(
       'kunjungan',
       fields: fields,
       fileListPaths: lampiran != null ? {'lampiran[]': lampiran} : null,
     );
     await fetchKunjungan(refresh: true);
+    return KunjunganModel.fromJson(response['data'] ?? response);
   }
 
   Future<void> approveKunjungan(int id) async {

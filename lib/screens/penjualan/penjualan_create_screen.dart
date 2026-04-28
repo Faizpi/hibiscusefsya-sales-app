@@ -18,6 +18,7 @@ import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
+import 'penjualan_detail_screen.dart';
 
 class PenjualanCreateScreen extends StatefulWidget {
   const PenjualanCreateScreen({super.key});
@@ -440,6 +441,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             .toList(),
       };
 
+      PenjualanModel createdModel;
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
         data.forEach((key, value) {
@@ -457,12 +459,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
         });
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        await provider.createPenjualanMultipart(
+        createdModel = await provider.createPenjualanMultipart(
           fields: fields,
           photoPaths: paths,
         );
       } else {
-        await provider.createPenjualan(data);
+        createdModel = await provider.createPenjualan(data);
       }
 
       if (mounted) {
@@ -471,7 +473,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
               content: Text('Penjualan berhasil dibuat!'),
               backgroundColor: Colors.green),
         );
-        Navigator.pop(context, true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PenjualanDetailScreen(id: createdModel.id),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

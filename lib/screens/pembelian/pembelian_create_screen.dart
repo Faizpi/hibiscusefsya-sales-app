@@ -14,6 +14,7 @@ import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../../widgets/glass_container.dart';
+import 'pembelian_detail_screen.dart';
 
 class PembelianCreateScreen extends StatefulWidget {
   const PembelianCreateScreen({super.key});
@@ -306,6 +307,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
             .toList(),
       };
 
+      PembelianModel createdModel;
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
         data.forEach((key, value) {
@@ -323,18 +325,23 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
         });
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        await provider.createPembelianMultipart(
+        createdModel = await provider.createPembelianMultipart(
           fields: fields,
           lampiran: paths,
         );
       } else {
-        await provider.createPembelian(data);
+        createdModel = await provider.createPembelian(data);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Pembelian berhasil dibuat!'),
             backgroundColor: Colors.green));
-        Navigator.pop(context, true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PembelianDetailScreen(id: createdModel.id),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

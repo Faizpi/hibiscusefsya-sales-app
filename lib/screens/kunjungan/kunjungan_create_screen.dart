@@ -16,6 +16,7 @@ import 'package:file_picker/file_picker.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
+import 'kunjungan_detail_screen.dart';
 
 class KunjunganCreateScreen extends StatefulWidget {
   const KunjunganCreateScreen({super.key});
@@ -355,6 +356,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
       };
       final provider = Provider.of<KunjunganProvider>(context, listen: false);
 
+      KunjunganModel createdModel;
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
         data.forEach((key, value) {
@@ -372,18 +374,23 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
         });
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        await provider.createKunjunganMultipart(
+        createdModel = await provider.createKunjunganMultipart(
           fields: fields,
           lampiran: paths,
         );
       } else {
-        await provider.createKunjungan(data);
+        createdModel = await provider.createKunjungan(data);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Kunjungan berhasil dibuat!'),
             backgroundColor: Colors.green));
-        Navigator.pop(context, true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => KunjunganDetailScreen(id: createdModel.id),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

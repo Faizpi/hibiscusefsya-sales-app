@@ -75,6 +75,7 @@
 Aplikasi terhubung dengan REST API backend melalui custom `ApiService` yang terletak di [lib/services/api_service.dart](lib/services/api_service.dart).
 
 **Base URL**: Dikonfigurasi di [lib/config/app_config.dart](lib/config/app_config.dart)
+
 ```dart
 static const String baseUrl = 'https://sales.hibiscusefsya.com/api/v1';
 ```
@@ -82,6 +83,7 @@ static const String baseUrl = 'https://sales.hibiscusefsya.com/api/v1';
 ### Supported HTTP Methods
 
 API Service mendukung:
+
 - `GET` - Mengambil data
 - `POST` - Membuat data baru
 - `PUT` - Memperbarui data
@@ -104,6 +106,7 @@ Aplikasi menggunakan **Bearer Token Authentication** dengan berikut:
 
 3. **Token Injection**:
    - Setiap request otomatis menambahkan header:
+
    ```
    Authorization: Bearer {token}
    Accept: application/json
@@ -123,6 +126,7 @@ Aplikasi menggunakan **Bearer Token Authentication** dengan berikut:
 ### Backend Technology Stack
 
 Backend API menggunakan:
+
 - **Framework**: Laravel (PHP)
 - **API Version**: v1 (REST API)
 - **Authentication**: Sanctum (Token-based)
@@ -173,6 +177,7 @@ flutter run -d emulator-5554
 ### Production Build
 
 #### Android APK
+
 ```bash
 # Build APK
 flutter build apk --release
@@ -184,12 +189,14 @@ flutter build apk --release --split-per-abi
 ```
 
 #### Android App Bundle (untuk Google Play)
+
 ```bash
 flutter build appbundle --release
 # Output: build/app/outputs/bundle/release/
 ```
 
 #### Web Build
+
 ```bash
 flutter build web --release
 # Output: build/web/
@@ -200,11 +207,13 @@ flutter build web --release
 Sebelum build, pastikan untuk mengatur:
 
 1. **API Base URL** - Edit [lib/config/app_config.dart](lib/config/app_config.dart):
+
    ```dart
    static const String baseUrl = 'https://sales.hibiscusefsya.com/api/v1';
    ```
 
 2. **App Icons** - Edit [pubspec.yaml](pubspec.yaml) bagian `flutter_launcher_icons`:
+
    ```yaml
    flutter_launcher_icons:
      android: true
@@ -236,4 +245,3 @@ lib/
 ├── utils/            # Helper functions dan formatters
 └── widgets/          # Custom widgets
 ```
-

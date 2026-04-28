@@ -44,15 +44,10 @@ class DetailPrintActionsHelper {
         icon: const Icon(Icons.qr_code),
         onPressed: () => showQrDialog(context, type: type, id: id),
       ),
-      IconButton(
-        tooltip: 'Tambah Lampiran',
-        icon: const Icon(Icons.add_a_photo_outlined),
-        onPressed: () => _addLampiran(context, type: type, id: id),
-      ),
     ];
   }
 
-  static Future<void> _addLampiran(
+  static Future<void> uploadLampiran(
     BuildContext context, {
     required String type,
     required int id,

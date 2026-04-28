@@ -14,6 +14,7 @@ import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
+import 'biaya_detail_screen.dart';
 
 class BiayaCreateScreen extends StatefulWidget {
   const BiayaCreateScreen({super.key});
@@ -175,6 +176,7 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
             .toList(),
       };
 
+      BiayaModel createdModel;
       if (_lampiran.isNotEmpty) {
         final fields = <String, String>{};
         data.forEach((key, value) {
@@ -192,18 +194,23 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
         });
         final paths =
             _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        await provider.createBiayaMultipart(
+        createdModel = await provider.createBiayaMultipart(
           fields: fields,
           lampiran: paths,
         );
       } else {
-        await provider.createBiaya(data);
+        createdModel = await provider.createBiaya(data);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Biaya berhasil dibuat!'),
             backgroundColor: Colors.green));
-        Navigator.pop(context, true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BiayaDetailScreen(id: createdModel.id),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

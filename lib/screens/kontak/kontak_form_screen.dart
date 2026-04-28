@@ -104,66 +104,48 @@ class _KontakFormScreenState extends State<KontakFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
-            // Kode Kontak & Nama Kontak
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _kodeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Kode Kontak',
-                    hintText: 'Kosongkan untuk auto-generate',
-                    helperText:
-                        'Contoh: KTKOO1, CUST-001. Kosongkan untuk auto-generate.',
-                    helperMaxLines: 2,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+            TextFormField(
+              controller: _kodeCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Kode Kontak',
+                hintText: 'Kosongkan untuk auto-generate',
+                helperText:
+                    'Contoh: KTKOO1, CUST-001. Kosongkan untuk auto-generate.',
+                helperMaxLines: 2,
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _namaCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Nama Kontak *', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Nama wajib diisi'
-                      : null,
-                ),
-              ),
-            ]),
+            ),
             const SizedBox(height: 16),
-
-            // Email & No Telepon
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _emailCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Email', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _telpCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'No. Telepon',
-                    hintText: '628xxxxxxxxxx',
-                    helperText:
-                        'Format: 628xxxxxxxxxx. Zuapa is, spasi, dari dll. No. Telp akan menjadi username login untuk kontak (jika perlu).',
-                    helperMaxLines: 3,
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
-            ]),
+            TextFormField(
+              controller: _namaCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Nama Kontak *', border: OutlineInputBorder()),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
+            ),
             const SizedBox(height: 16),
-
-            // PIN Customer
+            TextFormField(
+              controller: _emailCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Email', border: OutlineInputBorder()),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _telpCtrl,
+              decoration: const InputDecoration(
+                labelText: 'No. Telepon',
+                hintText: '628xxxxxxxxxx',
+                helperText:
+                    'Format: 628xxxxxxxxxx. No. telepon akan menjadi username login jika diperlukan.',
+                helperMaxLines: 3,
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _pinCtrl,
               decoration: const InputDecoration(
@@ -177,8 +159,6 @@ class _KontakFormScreenState extends State<KontakFormScreen> {
               maxLength: 6,
             ),
             const SizedBox(height: 16),
-
-            // Alamat
             TextFormField(
               controller: _alamatCtrl,
               decoration: const InputDecoration(
@@ -186,8 +166,6 @@ class _KontakFormScreenState extends State<KontakFormScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-
-            // Diskon Bawaan
             TextFormField(
               controller: _diskonCtrl,
               decoration: const InputDecoration(

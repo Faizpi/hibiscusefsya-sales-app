@@ -291,86 +291,90 @@ class GlassScaffold extends StatelessWidget {
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       bottomSheet: bottomSheet,
       persistentFooterButtons: persistentFooterButtons,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background gradient & decorative elements
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: isDark
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF0F1728),
-                          Color(0xFF162238),
-                          Color(0xFF1E1F34),
-                        ],
-                        stops: [0.0, 0.58, 1.0],
-                      )
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFECF3FF),
-                          Color(0xFFF5F8FF),
-                          Color(0xFFFBEFF8),
-                        ],
-                        stops: [0.0, 0.58, 1.0],
-                      ),
-              ),
-            ),
-          ),
-          // Decorative blurred circle - top right
-          Positioned(
-            top: -60,
-            right: -40,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: isDark
-                      ? [
-                          AppTheme.primaryColor.withAlpha(16),
-                          Colors.transparent,
-                        ]
-                      : [
-                          AppTheme.primaryColor.withAlpha(20),
-                          Colors.transparent,
-                        ],
+      body: SafeArea(
+        top: appBar == null,
+        bottom: true,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background gradient & decorative elements
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF0F1728),
+                            Color(0xFF162238),
+                            Color(0xFF1E1F34),
+                          ],
+                          stops: [0.0, 0.58, 1.0],
+                        )
+                      : const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFECF3FF),
+                            Color(0xFFF5F8FF),
+                            Color(0xFFFBEFF8),
+                          ],
+                          stops: [0.0, 0.58, 1.0],
+                        ),
                 ),
               ),
             ),
-          ),
-          // Decorative blurred circle - bottom left
-          Positioned(
-            bottom: -80,
-            left: -60,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: isDark
-                      ? [
-                          AppTheme.accentColor.withAlpha(10),
-                          Colors.transparent,
-                        ]
-                      : [
-                          AppTheme.pinkAccent.withAlpha(14),
-                          Colors.transparent,
-                        ],
+            // Decorative blurred circle - top right
+            Positioned(
+              top: -60,
+              right: -40,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: isDark
+                        ? [
+                            AppTheme.primaryColor.withAlpha(16),
+                            Colors.transparent,
+                          ]
+                        : [
+                            AppTheme.primaryColor.withAlpha(20),
+                            Colors.transparent,
+                          ],
+                  ),
                 ),
               ),
             ),
-          ),
-          // Main content
-          body,
-        ],
+            // Decorative blurred circle - bottom left
+            Positioned(
+              bottom: -80,
+              left: -60,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: isDark
+                        ? [
+                            AppTheme.accentColor.withAlpha(10),
+                            Colors.transparent,
+                          ]
+                        : [
+                            AppTheme.pinkAccent.withAlpha(14),
+                            Colors.transparent,
+                          ],
+                  ),
+                ),
+              ),
+            ),
+            // Main content
+            body,
+          ],
+        ),
       ),
     );
   }

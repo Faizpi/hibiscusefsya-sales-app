@@ -72,13 +72,25 @@ class PenerimaanBarangProvider with ChangeNotifier {
     final api = ApiService(token: _token);
     final response =
         await api.get('penerimaan-barang/pembelian-by-gudang/$gudangId');
-    return response is List ? response : [];
+    if (response is List) return response;
+    if (response is Map<String, dynamic>) {
+      final data = response['data'];
+      if (data is List) return data;
+    }
+    return [];
   }
 
   Future<Map<String, dynamic>> getPembelianDetail(int id) async {
     final api = ApiService(token: _token);
     final response = await api.get('penerimaan-barang/pembelian-detail/$id');
-    return response;
+    if (response is Map<String, dynamic>) {
+      final data = response['data'];
+      if (data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(data);
+      }
+      return response;
+    }
+    return {};
   }
 
   Future<PenerimaanBarangModel> createPenerimaan(
