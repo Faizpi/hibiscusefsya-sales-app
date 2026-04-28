@@ -240,6 +240,11 @@ class DetailPrintActionsHelper {
     required int id,
   }) async {
     try {
+      // Langkah 1: Pilih ukuran kertas
+      if (!context.mounted) return;
+      final paperSize = await _showPaperSizeDialog(context);
+      if (paperSize == null) return;
+
       final service = await _serviceFromContext(context);
       if (service == null) return;
 
@@ -248,6 +253,7 @@ class DetailPrintActionsHelper {
       final printData = {
         ...data,
         'type': type,
+        'paper_size': paperSize, // '58mm' atau '80mm'
       };
 
       if (!context.mounted) return;
@@ -264,17 +270,98 @@ class DetailPrintActionsHelper {
     }
   }
 
+  /// Dialog pilih ukuran kertas thermal printer
+  static Future<String?> _showPaperSizeDialog(BuildContext context) async {
+    return showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withAlpha(120),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withAlpha(30),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.straighten_rounded,
+                        color: Color(0xFF6366F1), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ukuran Kertas Printer',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          'Pilih sesuai printer Bluetooth Anda',
+                          style:
+                              TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _PaperSizeOption(
+                label: '58 mm',
+                subtitle: 'Printer kecil / standar',
+                icon: Icons.receipt_outlined,
+                onTap: () => Navigator.pop(ctx, '58mm'),
+              ),
+              const SizedBox(height: 10),
+              _PaperSizeOption(
+                label: '80 mm',
+                subtitle: 'Printer lebar / kasir',
+                icon: Icons.receipt_long_outlined,
+                onTap: () => Navigator.pop(ctx, '80mm'),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal',
+                    style: TextStyle(color: Color(0xFF888888))),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   static Future<bool?> _showPreviewDialog(
     BuildContext context,
     Map<String, dynamic> data,
   ) async {
     final title = _receiptTitle(data);
+    final paperSizeKey = _stringValue(data['paper_size']);
+    final is80mm = paperSizeKey == '80mm';
+    // Preview width: 80mm ≈ 380px, 58mm ≈ 300px
+    final paperWidth = is80mm ? 380.0 : 300.0;
     final lines = _buildReceiptLines(data);
 
     // Build preview line widgets – mirrors ESC/POS layout visually
     final previewWidgets = <Widget>[];
 
-    const paperWidth = 300.0; // ~58mm in logical px at typical density
     const mono = TextStyle(
       fontFamily: 'RobotoMono',
       fontSize: 11.5,
@@ -304,6 +391,8 @@ class DetailPrintActionsHelper {
       letterSpacing: 0.2,
     );
 
+    final dividerCount = is80mm ? 42 : 28;
+
     previewWidgets.add(
       Text('HIBISCUS EFSYA', style: monoBigBold, textAlign: TextAlign.center),
     );
@@ -314,15 +403,13 @@ class DetailPrintActionsHelper {
       );
     }
     previewWidgets.add(const SizedBox(height: 6));
-    previewWidgets.add(Text('─' * 28, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
     previewWidgets.add(const SizedBox(height: 4));
 
     for (final line in lines) {
       if (line == null) {
         previewWidgets.add(const SizedBox(height: 6));
       } else {
-        // Detect two-column format (key on left, value on right)
-        // _twoColumn produces strings with 2+ consecutive spaces as separator
         final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
         if (match != null) {
           previewWidgets.add(
@@ -349,7 +436,23 @@ class DetailPrintActionsHelper {
     }
 
     previewWidgets.add(const SizedBox(height: 4));
-    previewWidgets.add(Text('─' * 28, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
+    previewWidgets.add(const SizedBox(height: 8));
+    // QR Code website pelanggan
+    previewWidgets.add(
+      Center(
+        child: QrImageView(
+          data: 'https://customer.hibiscusefsya.com/',
+          size: is80mm ? 110 : 90,
+          version: QrVersions.auto,
+          backgroundColor: Colors.white,
+        ),
+      ),
+    );
+    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(
+      Text('customer.hibiscusefsya.com', style: monoCenter.copyWith(fontSize: 10, color: const Color(0xFF555555)), textAlign: TextAlign.center),
+    );
     previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
       Text('marketing@hibiscusefsya.com', style: monoCenter, textAlign: TextAlign.center),
@@ -620,7 +723,8 @@ class DetailPrintActionsHelper {
 
   static Future<List<int>> _buildEscPosBytes(Map<String, dynamic> data) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm58, profile);
+    final is80mm = _stringValue(data['paper_size']) == '80mm';
+    final generator = Generator(is80mm ? PaperSize.mm80 : PaperSize.mm58, profile);
     final bytes = <int>[];
 
     bytes.addAll(generator.reset());
@@ -655,6 +759,12 @@ class DetailPrintActionsHelper {
     }
 
     bytes.addAll(generator.hr());
+    // QR Code website pelanggan
+    bytes.addAll(generator.qrcode(
+      'https://customer.hibiscusefsya.com/',
+      size: QRSize.Size6,
+    ));
+    bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
       'marketing@hibiscusefsya.com',
       styles: const PosStyles(align: PosAlign.center),
@@ -1011,8 +1121,8 @@ class DetailPrintActionsHelper {
     return _twoColumn(label, value.isEmpty ? '-' : value);
   }
 
-  static String _twoColumn(String left, String right, {bool boldRight = false}) {
-    const width = 32;
+  static String _twoColumn(String left, String right,
+      {bool boldRight = false, int width = 32}) {
     final leftText = left.trim();
     final rightText = right.trim().isEmpty ? '-' : right.trim();
     final available = width - leftText.length - rightText.length;
@@ -1248,4 +1358,63 @@ class _TornEdgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Widget pilihan ukuran kertas pada dialog pilih printer
+class _PaperSizeOption extends StatelessWidget {
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PaperSizeOption({
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withAlpha(20),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: const Color(0xFF6366F1), size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF888888))),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: Color(0xFF888888), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }
