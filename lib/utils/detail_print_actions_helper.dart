@@ -443,7 +443,7 @@ class DetailPrintActionsHelper {
       Center(
         child: QrImageView(
           data: 'https://customer.hibiscusefsya.com/',
-          size: is80mm ? 110 : 90,
+          size: is80mm ? 75 : 65,
           version: QrVersions.auto,
           backgroundColor: Colors.white,
         ),
@@ -762,7 +762,7 @@ class DetailPrintActionsHelper {
     // QR Code website pelanggan
     bytes.addAll(generator.qrcode(
       'https://customer.hibiscusefsya.com/',
-      size: QRSize.size6,
+      size: QRSize.size4,
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
