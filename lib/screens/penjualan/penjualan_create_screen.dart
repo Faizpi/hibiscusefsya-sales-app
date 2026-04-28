@@ -9,6 +9,7 @@ import '../../providers/kontak_provider.dart';
 import '../../providers/gudang_provider.dart';
 import '../../models/kontak_model.dart';
 import '../../models/produk_model.dart';
+import '../../models/penjualan_model.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';

@@ -6,6 +6,7 @@ import '../../providers/pembelian_provider.dart';
 import '../../providers/produk_provider.dart';
 import '../../providers/gudang_provider.dart';
 import '../../models/produk_model.dart';
+import '../../models/pembelian_model.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';
