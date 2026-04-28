@@ -409,6 +409,10 @@ class DetailPrintActionsHelper {
     for (final line in lines) {
       if (line == null) {
         previewWidgets.add(const SizedBox(height: 6));
+      } else if (line == '---HR---') {
+        previewWidgets.add(const SizedBox(height: 4));
+        previewWidgets.add(Text('─' * dividerCount, style: dividerStyle, textAlign: TextAlign.center));
+        previewWidgets.add(const SizedBox(height: 4));
       } else {
         final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
         if (match != null) {
@@ -752,6 +756,10 @@ class DetailPrintActionsHelper {
         bytes.addAll(generator.feed(1));
         continue;
       }
+      if (line == '---HR---') {
+        bytes.addAll(generator.hr());
+        continue;
+      }
       bytes.addAll(generator.text(
         line,
         styles: const PosStyles(align: PosAlign.left),
@@ -788,7 +796,10 @@ class DetailPrintActionsHelper {
     return 'STRUK';
   }
 
+  static int _currentPrintWidth = 32;
+
   static List<String?> _buildReceiptLines(Map<String, dynamic> data) {
+    _currentPrintWidth = _stringValue(data['paper_size']) == '80mm' ? 48 : 32;
     final type = _stringValue(data['type']).toLowerCase();
     if (type.contains('penjualan')) return _buildPenjualanLines(data);
     if (type.contains('kunjungan')) return _buildKunjunganLines(data);
@@ -817,8 +828,6 @@ class DetailPrintActionsHelper {
     }
     lines.addAll([
       _kvLine('Sales', _stringValue(data['sales'])),
-      _kvLine('Gudang', _stringValue(data['gudang'])),
-      _kvLine('Status', _stringValue(data['status'])),
     ]);
     if (_stringValue(data['no_referensi']).isNotEmpty) {
       lines.add(_kvLine('No. Ref', _stringValue(data['no_referensi'])));
@@ -832,7 +841,7 @@ class DetailPrintActionsHelper {
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
     }
-    lines.add(null);
+    lines.add('---HR---');
 
     final items = _listOfMaps(data['items']);
     for (final item in items) {
@@ -855,6 +864,11 @@ class DetailPrintActionsHelper {
       lines.add(null);
     }
 
+    if (lines.isNotEmpty && lines.last == null) {
+      lines.removeLast();
+    }
+    lines.add('---HR---');
+
     lines.addAll([
       _twoColumn('Subtotal', _currency(_numValue(data['subtotal']))),
       if (_numValue(data['diskon_akhir']) > 0)
@@ -864,6 +878,7 @@ class DetailPrintActionsHelper {
           'Pajak (${_numValue(data['tax_percentage']).toStringAsFixed(_numValue(data['tax_percentage']) % 1 == 0 ? 0 : 2)}%)',
           _currency(_numValue(data['pajak'])),
         ),
+      '---HR---',
       _twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true),
     ]);
     return lines;
@@ -875,7 +890,6 @@ class DetailPrintActionsHelper {
       _kvLine('Nomor', _stringValue(data['nomor'])),
       _kvLine('Tanggal', _stringValue(data['tanggal'])),
       _kvLine('Tujuan', _stringValue(data['tujuan'])),
-      _kvLine('Gudang', _stringValue(data['gudang'])),
     ]);
     // Pembuat (user yang login)
     String pembuatNama = _stringValue(data['dibuat_oleh']);
@@ -885,7 +899,6 @@ class DetailPrintActionsHelper {
     }
     if (pembuatNama.isEmpty) pembuatNama = _stringValue(data['pembuat']);
     if (pembuatNama.isNotEmpty) lines.add(_kvLine('Pembuat', pembuatNama));
-    lines.add(_kvLine('Status', _stringValue(data['status'])));
     // Pelanggan (dari sales_nama atau kontak nested)
     String pelangganNama = _stringValue(data['sales_nama']);
     if (pelangganNama.isEmpty) {
@@ -912,7 +925,7 @@ class DetailPrintActionsHelper {
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
     }
-    lines.add(null);
+    lines.add('---HR---');
 
     final items = _listOfMaps(data['items']);
     for (final item in items) {
@@ -959,6 +972,10 @@ class DetailPrintActionsHelper {
       }
       lines.add(null);
     }
+    
+    if (lines.isNotEmpty && lines.last == null) {
+      lines.removeLast();
+    }
     return lines;
   }
 
@@ -977,8 +994,6 @@ class DetailPrintActionsHelper {
     lines.addAll([
       _kvLine('Vendor', _stringValue(data['vendor'])),
       _kvLine('Dibuat oleh', _stringValue(data['sales'])),
-      _kvLine('Gudang', _stringValue(data['gudang'])),
-      _kvLine('Status', _stringValue(data['status'])),
     ]);
     if (_stringValue(data['tahun_anggaran']).isNotEmpty) {
       lines.add(_kvLine('Thn Anggaran', _stringValue(data['tahun_anggaran'])));
@@ -989,7 +1004,7 @@ class DetailPrintActionsHelper {
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
     }
-    lines.add(null);
+    lines.add('---HR---');
 
     final items = _listOfMaps(data['items']);
     for (final item in items) {
@@ -1023,6 +1038,11 @@ class DetailPrintActionsHelper {
       lines.add(null);
     }
 
+    if (lines.isNotEmpty && lines.last == null) {
+      lines.removeLast();
+    }
+    lines.add('---HR---');
+
     lines.addAll([
       _twoColumn('Subtotal', _currency(_numValue(data['subtotal']))),
       if (_numValue(data['diskon_akhir']) > 0)
@@ -1032,6 +1052,7 @@ class DetailPrintActionsHelper {
           'Pajak (${_numValue(data['tax_percentage']).toStringAsFixed(_numValue(data['tax_percentage']) % 1 == 0 ? 0 : 2)}%)',
           _currency(_numValue(data['pajak'])),
         ),
+      '---HR---',
       _twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true),
     ]);
     return lines;
@@ -1054,7 +1075,6 @@ class DetailPrintActionsHelper {
     }
     lines.addAll([
       _kvLine('Dibuat oleh', _stringValue(data['sales'])),
-      _kvLine('Status', _stringValue(data['status'])),
     ]);
     if (_stringValue(data['tag']).isNotEmpty) {
       lines.add(_kvLine('Tag', _stringValue(data['tag'])));
@@ -1065,7 +1085,7 @@ class DetailPrintActionsHelper {
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
     }
-    lines.add(null);
+    lines.add('---HR---');
 
     final items = _listOfMaps(data['items']);
     for (final item in items) {
@@ -1076,6 +1096,11 @@ class DetailPrintActionsHelper {
       lines.add(_twoColumn('Jumlah', _currency(_numValue(item['jumlah']))));
       lines.add(null);
     }
+
+    if (lines.isNotEmpty && lines.last == null) {
+      lines.removeLast();
+    }
+    lines.add('---HR---');
 
     // Biaya: tampilkan subtotal + pajak + grand total
     final subtotal = _numValue(data['subtotal']);
@@ -1088,6 +1113,7 @@ class DetailPrintActionsHelper {
         _currency(_numValue(data['pajak'])),
       ));
     }
+    lines.add('---HR---');
     lines.add(_twoColumn('GRAND TOTAL', _currency(_numValue(data['grand_total'])), boldRight: true));
     return lines;
   }
@@ -1122,20 +1148,22 @@ class DetailPrintActionsHelper {
   }
 
   static String _twoColumn(String left, String right,
-      {bool boldRight = false, int width = 32}) {
+      {bool boldRight = false, int? width}) {
+    final int w = width ?? _currentPrintWidth;
     final leftText = left.trim();
     final rightText = right.trim().isEmpty ? '-' : right.trim();
-    final available = width - leftText.length - rightText.length;
+    final available = w - leftText.length - rightText.length;
     if (available <= 1) {
       return '$leftText $rightText';
     }
     return '$leftText${' ' * available}$rightText';
   }
 
-  static String _wrapText(String value, {int width = 32}) {
+  static String _wrapText(String value, {int? width}) {
+    final int w = width ?? _currentPrintWidth;
     final text = value.trim();
     if (text.isEmpty) return '';
-    if (text.length <= width) return text;
+    if (text.length <= w) return text;
 
     final words = text.split(RegExp(r'\s+'));
     final lines = <String>[];
@@ -1145,7 +1173,7 @@ class DetailPrintActionsHelper {
         current = word;
         continue;
       }
-      if ((current.length + 1 + word.length) <= width) {
+      if ((current.length + 1 + word.length) <= w) {
         current = '$current $word';
       } else {
         lines.add(current);
