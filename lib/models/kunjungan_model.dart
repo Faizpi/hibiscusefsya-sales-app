@@ -11,7 +11,7 @@ class KunjunganModel {
   final int? gudangId;
   final int? kontakId;
   final String? salesNama;
-  final String? salesEmail;
+  final String? salesNoTelepon;
   final String? salesAlamat;
   final String? tglKunjungan;
   final String? tujuan;
@@ -34,7 +34,7 @@ class KunjunganModel {
     this.gudangId,
     this.kontakId,
     this.salesNama,
-    this.salesEmail,
+    this.salesNoTelepon,
     this.salesAlamat,
     this.tglKunjungan,
     this.tujuan,
@@ -65,7 +65,7 @@ class KunjunganModel {
       gudangId: json['gudang_id'],
       kontakId: json['kontak_id'],
       salesNama: json['sales_nama'],
-      salesEmail: json['sales_email'],
+      salesNoTelepon: json['sales_no_telepon'],
       salesAlamat: json['sales_alamat'],
       tglKunjungan: json['tgl_kunjungan'],
       tujuan: json['tujuan'],

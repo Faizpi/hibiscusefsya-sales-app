@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/penjualan_provider.dart';
 import '../../providers/produk_provider.dart';
@@ -14,7 +13,6 @@ import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/koordinat_lokasi_field.dart';
-import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
@@ -45,12 +43,13 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
   String _tipeHarga = 'Retail';
   double _taxPercentage = 0;
   double _diskonAkhir = 0;
+  bool _diskonAkhirIsPersen = false; // false = Rp, true = %
+  final _diskonAkhirController = TextEditingController();
   int? _gudangId;
   bool _isGudangLocked = false;
   bool _isLoadingProdukGudang = false;
   final Set<int> _allowedProdukIds = {};
   final List<_ItemRow> _items = [];
-  List<PlatformFile> _lampiran = [];
   bool _isSubmitting = false;
 
   @override
@@ -82,6 +81,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     _noReferensiController.dispose();
     _koordinatController.dispose();
     _tagController.dispose();
+    _diskonAkhirController.dispose();
     super.dispose();
   }
 
@@ -179,14 +179,14 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
         );
     final scannedName =
         (result['nama'] ?? matched?.nama ?? '').toString().trim();
-    final scannedEmail =
-        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedNoTelp =
+        (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _selectedKontak = matched;
       _pelangganController.text = scannedName;
-      _emailController.text = scannedEmail;
+      _emailController.text = scannedNoTelp;
       _alamatPenagihanController.text = scannedAlamat;
       _defaultKontakDiskonPersen = (matched?.diskonPersen ?? 0).toDouble();
       if (_defaultKontakDiskonPersen > 0) {
@@ -326,14 +326,21 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     return total;
   }
 
+  double get _diskonAkhirNominal {
+    if (_diskonAkhirIsPersen) {
+      return _subTotal * _diskonAkhir / 100;
+    }
+    return _diskonAkhir;
+  }
+
   double get _jumlahPajak {
-    double afterDiskon = _subTotal - _diskonAkhir;
+    double afterDiskon = _subTotal - _diskonAkhirNominal;
     if (afterDiskon < 0) afterDiskon = 0;
     return afterDiskon * _taxPercentage / 100;
   }
 
   double get _grandTotal {
-    double afterDiskon = _subTotal - _diskonAkhir;
+    double afterDiskon = _subTotal - _diskonAkhirNominal;
     if (afterDiskon < 0) afterDiskon = 0;
     return afterDiskon + _jumlahPajak;
   }
@@ -401,7 +408,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
           : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
       final data = {
         'pelanggan': _selectedKontak?.nama ?? _pelangganController.text,
-        'email':
+        'no_telepon':
             _emailController.text.isNotEmpty ? _emailController.text : null,
         'alamat_penagihan': _alamatPenagihanController.text.isNotEmpty
             ? _alamatPenagihanController.text
@@ -418,7 +425,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             : null,
         'tag': resolvedTag,
         'tax_percentage': _taxPercentage,
-        'diskon_akhir': _diskonAkhir,
+        'diskon_akhir': _diskonAkhirNominal,
         'memo': _memoController.text,
         'items': selectedItems
             .map((i) => {
@@ -442,31 +449,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             .toList(),
       };
 
-      PenjualanModel createdModel;
-      if (_lampiran.isNotEmpty) {
-        final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value == null) return;
-          if (key == 'items') {
-            final items = value as List;
-            for (int idx = 0; idx < items.length; idx++) {
-              (items[idx] as Map).forEach((k, v) {
-                if (v != null) fields['items[$idx][$k]'] = v.toString();
-              });
-            }
-          } else {
-            fields[key] = value.toString();
-          }
-        });
-        final paths =
-            _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        createdModel = await provider.createPenjualanMultipart(
-          fields: fields,
-          photoPaths: paths,
-        );
-      } else {
-        createdModel = await provider.createPenjualan(data);
-      }
+      PenjualanModel createdModel = await provider.createPenjualan(data);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -520,7 +503,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                     setState(() {
                       _selectedKontak = v;
                       _pelangganController.text = v?.nama ?? '';
-                      _emailController.text = v?.email ?? '';
+                      _emailController.text = v?.noTelp ?? '';
                       _alamatPenagihanController.text = v?.alamat ?? '';
                       _defaultKontakDiskonPersen =
                           (v?.diskonPersen ?? 0).toDouble();
@@ -572,14 +555,14 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                 ),
               ),
 
-            // Email
+            // No. Telepon
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined, size: 20),
+                labelText: 'No. Telepon',
+                prefixIcon: Icon(Icons.phone_outlined, size: 20),
               ),
-              keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 12),
 
@@ -988,6 +971,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                   child: DatePickerField(
                                     label: 'Exp',
                                     selectedDate: _items[i].expDate,
+                                    firstDate: DateTime.now(),
                                     onDateSelected: (d) =>
                                         setState(() => _items[i].expDate = d),
                                   ),
@@ -1041,9 +1025,91 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    // Selector mode diskon akhir (Nominal / Persen)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() {
+                              _diskonAkhirIsPersen = false;
+                              _diskonAkhir = 0;
+                              _diskonAkhirController.clear();
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: !_diskonAkhirIsPersen
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.cardBg(context),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: !_diskonAkhirIsPersen
+                                      ? AppTheme.primaryColor
+                                      : AppTheme.borderColorOf(context),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Nominal (Rp)',
+                                  style: TextStyle(
+                                    color: !_diskonAkhirIsPersen
+                                        ? Colors.white
+                                        : AppTheme.textPrimaryColor(context),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() {
+                              _diskonAkhirIsPersen = true;
+                              _diskonAkhir = 0;
+                              _diskonAkhirController.clear();
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _diskonAkhirIsPersen
+                                    ? AppTheme.successColor
+                                    : AppTheme.cardBg(context),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _diskonAkhirIsPersen
+                                      ? AppTheme.successColor
+                                      : AppTheme.borderColorOf(context),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Persen (%)',
+                                  style: TextStyle(
+                                    color: _diskonAkhirIsPersen
+                                        ? Colors.white
+                                        : AppTheme.textPrimaryColor(context),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
-                      decoration: const InputDecoration(
-                          labelText: 'Diskon Akhir (Rp)', isDense: true),
+                      controller: _diskonAkhirController,
+                      decoration: InputDecoration(
+                        labelText: _diskonAkhirIsPersen
+                            ? 'Diskon Akhir (%)'
+                            : 'Diskon Akhir (Rp)',
+                        isDense: true,
+                      ),
                       keyboardType: TextInputType.number,
                       onChanged: (v) => setState(
                           () => _diskonAkhir = double.tryParse(v) ?? 0),
@@ -1093,12 +1159,6 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Lampiran
-            LampiranPickerWidget(
-              files: _lampiran,
-              onFilesChanged: (files) => setState(() => _lampiran = files),
-              fileNamePrefix: 'INV',
-            ),
             const SizedBox(height: 24),
 
             // Submit

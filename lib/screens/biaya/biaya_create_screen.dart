@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/biaya_provider.dart';
 import '../../providers/kontak_provider.dart';
@@ -10,7 +9,6 @@ import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/koordinat_lokasi_field.dart';
-import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
@@ -40,7 +38,6 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
   bool _bayarNanti = false;
   double _taxPercentage = 0;
   final List<_BiayaItem> _items = [];
-  List<PlatformFile> _lampiran = [];
   bool _isSubmitting = false;
 
   @override
@@ -177,31 +174,7 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
             .toList(),
       };
 
-      BiayaModel createdModel;
-      if (_lampiran.isNotEmpty) {
-        final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value == null) return;
-          if (key == 'items') {
-            final items = value as List;
-            for (int idx = 0; idx < items.length; idx++) {
-              (items[idx] as Map).forEach((k, v) {
-                if (v != null) fields['items[$idx][$k]'] = v.toString();
-              });
-            }
-          } else {
-            fields[key] = value.toString();
-          }
-        });
-        final paths =
-            _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        createdModel = await provider.createBiayaMultipart(
-          fields: fields,
-          lampiran: paths,
-        );
-      } else {
-        createdModel = await provider.createBiaya(data);
-      }
+      BiayaModel createdModel = await provider.createBiaya(data);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Biaya berhasil dibuat!'),
@@ -483,12 +456,6 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Lampiran
-            LampiranPickerWidget(
-              files: _lampiran,
-              onFilesChanged: (files) => setState(() => _lampiran = files),
-              fileNamePrefix: 'EXP',
-            ),
             const SizedBox(height: 24),
 
             // Buttons

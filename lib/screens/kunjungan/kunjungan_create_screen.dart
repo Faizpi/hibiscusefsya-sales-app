@@ -11,9 +11,7 @@ import '../../models/kunjungan_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/koordinat_lokasi_field.dart';
-import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
-import 'package:file_picker/file_picker.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../kontak/kontak_form_screen.dart';
 import '../../widgets/glass_container.dart';
@@ -42,7 +40,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
   String? _tujuan;
   final _koordinatController = TextEditingController();
   final List<_KunjunganItem> _items = [];
-  List<PlatformFile> _lampiran = [];
   bool _isSubmitting = false;
 
   static const List<String> _tujuanOptions = [
@@ -118,14 +115,14 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
         );
     final scannedName =
         (result['nama'] ?? matched?.nama ?? '').toString().trim();
-    final scannedEmail =
-        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedNoTelp =
+        (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _selectedKontak = matched;
 
-      _emailController.text = scannedEmail;
+      _emailController.text = scannedNoTelp;
       _alamatController.text = scannedAlamat;
     });
   }
@@ -333,7 +330,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             ? _koordinatController.text
             : null,
         'sales_nama': _selectedKontak?.nama,
-        'sales_email': _emailController.text.trim().isNotEmpty
+        'sales_no_telepon': _emailController.text.trim().isNotEmpty
             ? _emailController.text.trim()
             : null,
         'sales_alamat': _alamatController.text.trim().isNotEmpty
@@ -357,31 +354,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
       };
       final provider = Provider.of<KunjunganProvider>(context, listen: false);
 
-      KunjunganModel createdModel;
-      if (_lampiran.isNotEmpty) {
-        final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value == null) return;
-          if (key == 'items') {
-            final items = value as List;
-            for (int idx = 0; idx < items.length; idx++) {
-              (items[idx] as Map).forEach((k, v) {
-                if (v != null) fields['items[$idx][$k]'] = v.toString();
-              });
-            }
-          } else {
-            fields[key] = value.toString();
-          }
-        });
-        final paths =
-            _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        createdModel = await provider.createKunjunganMultipart(
-          fields: fields,
-          lampiran: paths,
-        );
-      } else {
-        createdModel = await provider.createKunjungan(data);
-      }
+      KunjunganModel createdModel = await provider.createKunjungan(data);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Kunjungan berhasil dibuat!'),
@@ -493,7 +466,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
                   itemAsString: _kontakSearchLabel,
                   onChanged: (v) => setState(() {
                     _selectedKontak = v;
-                    _emailController.text = v?.email ?? '';
+                    _emailController.text = v?.noTelp ?? '';
                     _alamatController.text = v?.alamat ?? '';
                   }),
                   validator: (v) =>
@@ -523,15 +496,15 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Email & Alamat Pelanggan (dari kontak yang dipilih/scan)
+            // No. Telepon & Alamat Pelanggan (dari kontak yang dipilih/scan)
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                  labelText: 'Email Pelanggan',
+                  labelText: 'No. Telepon Pelanggan',
                   hintText: 'Otomatis dari kontak',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email_outlined, size: 20)),
-              keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icon(Icons.phone_outlined, size: 20)),
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -569,12 +542,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Lampiran
-            LampiranPickerWidget(
-              files: _lampiran,
-              onFilesChanged: (files) => setState(() => _lampiran = files),
-              fileNamePrefix: 'VST',
-            ),
             const SizedBox(height: 20),
             Consumer<GudangProvider>(
               builder: (ctx, gudangProvider, _) {
@@ -727,6 +694,7 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
                                       child: DatePickerField(
                                         label: 'Exp Date',
                                         selectedDate: _items[i].expDate,
+                                        firstDate: DateTime.now(),
                                         onDateSelected: (d) => setState(
                                             () => _items[i].expDate = d),
                                       ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -98,16 +99,17 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> updateProfile({
-    required String name,
+    String? name,
     String? noTelp,
     String? alamat,
   }) async {
     final api = ApiService(token: _token);
-    final response = await api.put('profile', body: {
-      'name': name,
+    final body = <String, dynamic>{
+      if (name != null && name.isNotEmpty) 'name': name,
       if (noTelp != null) 'no_telp': noTelp,
       if (alamat != null) 'alamat': alamat,
-    });
+    };
+    final response = await api.put('profile', body: body);
     _user = UserModel.fromJson(response['user'] ?? response['data']);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConfig.userKey, jsonEncode(_user!.toJson()));
@@ -125,6 +127,29 @@ class AuthProvider with ChangeNotifier {
       'new_password': newPassword,
       'new_password_confirmation': newPasswordConfirmation,
     });
+  }
+
+  /// Upload avatar (File dari kamera atau galeri, sudah dikompresi oleh UI).
+  Future<void> uploadAvatar(File imageFile) async {
+    final api = ApiService(token: _token);
+    final response = await api.postMultipart(
+      'profile/avatar',
+      filePaths: {'avatar': imageFile.path},
+    );
+    _user = UserModel.fromJson(response['user'] ?? response['data']);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConfig.userKey, jsonEncode(_user!.toJson()));
+    notifyListeners();
+  }
+
+  /// Hapus avatar (reset ke default huruf).
+  Future<void> deleteAvatar() async {
+    final api = ApiService(token: _token);
+    final response = await api.delete('profile/avatar');
+    _user = UserModel.fromJson(response['user'] ?? response['data']);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConfig.userKey, jsonEncode(_user!.toJson()));
+    notifyListeners();
   }
 
   Future<void> refreshProfile() async {

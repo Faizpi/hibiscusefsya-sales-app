@@ -5,7 +5,7 @@ class PenjualanModel {
   final String? nomor;
   final String? uuid;
   final String? pelanggan;
-  final String? email;
+  final String? noTelepon;
   final String? alamatPenagihan;
   final String? tglTransaksi;
   final String? tglJatuhTempo;
@@ -33,7 +33,7 @@ class PenjualanModel {
     this.nomor,
     this.uuid,
     this.pelanggan,
-    this.email,
+    this.noTelepon,
     this.alamatPenagihan,
     this.tglTransaksi,
     this.tglJatuhTempo,
@@ -70,7 +70,7 @@ class PenjualanModel {
       nomor: json['nomor'],
       uuid: json['uuid'],
       pelanggan: json['pelanggan'],
-      email: json['email'],
+      noTelepon: json['no_telepon'],
       alamatPenagihan: json['alamat_penagihan'],
       tglTransaksi: json['tgl_transaksi'],
       tglJatuhTempo: json['tgl_jatuh_tempo'],
@@ -136,6 +136,7 @@ class PenjualanModel {
   }
 
   String get userName => user?['name'] ?? '-';
+  String get userNoTelp => user?['no_telp'] ?? '';
   String get gudangName => gudang?['nama_gudang'] ?? '-';
 }
 

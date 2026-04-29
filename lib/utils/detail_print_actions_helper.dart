@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:io' as io;
 
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -57,6 +58,13 @@ class DetailPrintActionsHelper {
       MaterialPageRoute(builder: (_) => const CameraLampiranCaptureScreen()),
     );
     if (result == null || !context.mounted) return;
+    final file = io.File(result.imagePath);
+    final sizeInBytes = await file.length();
+    if (sizeInBytes > 2 * 1024 * 1024) {
+      if (!context.mounted) return;
+      _snack(context, 'Ukuran foto terlalu besar (${(sizeInBytes / 1024 / 1024).toStringAsFixed(1)} MB). Maksimal 2MB.', isError: true);
+      return;
+    }
 
     showDialog(
       context: context,
@@ -453,6 +461,18 @@ class DetailPrintActionsHelper {
         previewWidgets.add(const SizedBox(height: 4));
         previewWidgets.add(Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
         previewWidgets.add(const SizedBox(height: 4));
+      } else if (line.startsWith(' R:')) {
+        // Baris lanjutan rata kanan (wrap dari _rightAlignLines)
+        previewWidgets.add(
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              line.substring(3),
+              style: mono,
+              textAlign: TextAlign.right,
+            ),
+          ),
+        );
       } else {
         final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
         if (match != null) {
@@ -481,7 +501,16 @@ class DetailPrintActionsHelper {
 
     previewWidgets.add(const SizedBox(height: 4));
     previewWidgets.add(Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
-    previewWidgets.add(const SizedBox(height: 8));
+    previewWidgets.add(SizedBox(height: is80mm ? 10 : 6));
+    // Teks promosi
+    previewWidgets.add(
+      Text(
+        'Periksa Invoice & Ambil Promo !!!',
+        style: monoCenter.copyWith(fontWeight: FontWeight.w700),
+        textAlign: TextAlign.center,
+      ),
+    );
+    previewWidgets.add(const SizedBox(height: 6));
     // QR Code website pelanggan
     previewWidgets.add(
       Center(
@@ -493,19 +522,19 @@ class DetailPrintActionsHelper {
         ),
       ),
     );
-    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
       Text('customer.hibiscusefsya.com', style: monoCenter.copyWith(fontSize: 10, color: const Color(0xFF555555)), textAlign: TextAlign.center),
     );
-    previewWidgets.add(const SizedBox(height: 6));
+    previewWidgets.add(const SizedBox(height: 8));
     previewWidgets.add(
       Text('marketing@hibiscusefsya.com', style: monoCenter, textAlign: TextAlign.center),
     );
-    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
-      Text('Oficial No: +6285195550202', style: monoCenter, textAlign: TextAlign.center),
+      Text('Official WA Chat: +6285195550202', style: monoCenter, textAlign: TextAlign.center),
     );
-    previewWidgets.add(const SizedBox(height: 4));
+    previewWidgets.add(const SizedBox(height: 8));
     previewWidgets.add(
       Text('Terima kasih', style: monoCenter.copyWith(fontWeight: FontWeight.w600), textAlign: TextAlign.center),
     );
@@ -804,6 +833,13 @@ class DetailPrintActionsHelper {
         bytes.addAll(generator.hr());
         continue;
       }
+      if (line.startsWith('\x00R:')) {
+        bytes.addAll(generator.text(
+          line.substring(3),
+          styles: const PosStyles(align: PosAlign.right),
+        ));
+        continue;
+      }
       bytes.addAll(generator.text(
         line,
         styles: const PosStyles(align: PosAlign.left),
@@ -811,6 +847,12 @@ class DetailPrintActionsHelper {
     }
 
     bytes.addAll(generator.hr());
+    bytes.addAll(generator.feed(1));
+    bytes.addAll(generator.text(
+      'Periksa Invoice & Ambil Promo !!!',
+      styles: const PosStyles(align: PosAlign.center, bold: true),
+    ));
+    bytes.addAll(generator.feed(1));
     // QR Code website pelanggan
     bytes.addAll(generator.qrcode(
       'https://customer.hibiscusefsya.com/',
@@ -823,7 +865,7 @@ class DetailPrintActionsHelper {
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
-      'Oficial No: +6285195550202',
+      'Official WA Chat: +6285195550202',
       styles: const PosStyles(align: PosAlign.center),
     ));
     bytes.addAll(generator.feed(1));
@@ -831,7 +873,7 @@ class DetailPrintActionsHelper {
       'Terima kasih',
       styles: const PosStyles(align: PosAlign.center),
     ));
-    bytes.addAll(generator.feed(2));
+    bytes.addAll(generator.feed(is80mm ? 3 : 2));
     bytes.addAll(generator.cut());
     return bytes;
   }
@@ -866,26 +908,17 @@ class DetailPrintActionsHelper {
       _kvLine('Pembayaran', _stringValue(data['pembayaran'])),
       _kvLine('Pelanggan', _stringValue(data['pelanggan'])),
     ]);
-    if (_stringValue(data['email']).isNotEmpty) {
-      lines.add(_kvLine('Email', _stringValue(data['email'])));
-    }
-    if (_stringValue(data['alamat_penagihan']).isNotEmpty) {
-      lines.add(_kvLine('Alamat', _stringValue(data['alamat_penagihan'])));
-    }
-    if (_stringValue(data['tipe_harga']).isNotEmpty) {
-      lines.add(_kvLine('Tipe Harga', _stringValue(data['tipe_harga'])));
+    if (_stringValue(data['no_telepon']).isNotEmpty) {
+      lines.add(_kvLine('No. Telepon', _stringValue(data['no_telepon'])));
     }
     lines.addAll([
       _kvLine('Sales', _stringValue(data['sales'])),
     ]);
+    if (_stringValue(data['sales_no_telp']).isNotEmpty) {
+      lines.add(_kvLine('No. Telp Sales', _stringValue(data['sales_no_telp'])));
+    }
     if (_stringValue(data['no_referensi']).isNotEmpty) {
       lines.add(_kvLine('No. Ref', _stringValue(data['no_referensi'])));
-    }
-    if (_stringValue(data['tag']).isNotEmpty) {
-      lines.add(_kvLine('Tag', _stringValue(data['tag'])));
-    }
-    if (_stringValue(data['koordinat']).isNotEmpty) {
-      lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
     }
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
@@ -895,16 +928,13 @@ class DetailPrintActionsHelper {
     final items = _listOfMaps(data['items']);
     for (final item in items) {
       lines.add(_wrapText(_itemName(item)));
-      lines.add(_wrapText(_itemQuantityPrice(item)));
+      // Batch & Exp selalu tampil (N/A jika kosong) di samping harga satuan
+      final batchVal = _stringValue(item['batch']).isNotEmpty ? _stringValue(item['batch']) : 'N/A';
+      final expVal = _formatExpDate(_stringValue(item['exp']));
+      lines.add(_wrapText(_itemQuantityPrice(item, batchVal: batchVal, expVal: expVal)));
       final diskon = _numValue(item['diskon']);
       if (diskon > 0) {
         lines.add(_twoColumn('Diskon', '${diskon.toStringAsFixed(diskon % 1 == 0 ? 0 : 2)}%'));
-      }
-      if (_stringValue(item['batch']).isNotEmpty) {
-        lines.add(_kvLine('Batch', _stringValue(item['batch'])));
-      }
-      if (_stringValue(item['exp']).isNotEmpty) {
-        lines.add(_kvLine('Exp', _stringValue(item['exp'])));
       }
       if (_stringValue(item['deskripsi']).isNotEmpty) {
         lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
@@ -962,14 +992,16 @@ class DetailPrintActionsHelper {
     if (pelangganNama.isNotEmpty) {
       lines.add(_kvLine('Pelanggan', pelangganNama));
     }
-    if (_stringValue(data['sales_email']).isNotEmpty) {
-      lines.add(_kvLine('Email', _stringValue(data['sales_email'])));
+    if (_stringValue(data['sales_no_telepon']).isNotEmpty) {
+      lines.add(_kvLine('No. Telepon', _stringValue(data['sales_no_telepon'])));
     }
-    if (_stringValue(data['sales_alamat']).isNotEmpty) {
-      lines.add(_kvLine('Alamat', _stringValue(data['sales_alamat'])));
+    final alamat = _stringValue(data['sales_alamat']);
+    if (alamat.isNotEmpty) {
+      lines.addAll(_rightAlignLines('Alamat', alamat));
     }
-    if (_stringValue(data['koordinat']).isNotEmpty) {
-      lines.add(_kvLine('Koordinat', _stringValue(data['koordinat'])));
+    final koordinat = _stringValue(data['koordinat']);
+    if (koordinat.isNotEmpty) {
+      lines.addAll(_rightAlignLines('Koordinat', koordinat));
     }
     if (_stringValue(data['memo']).isNotEmpty) {
       lines.add(_kvLine('Memo', _stringValue(data['memo'])));
@@ -1184,11 +1216,14 @@ class DetailPrintActionsHelper {
         : '-';
   }
 
-  static String _itemQuantityPrice(Map<String, dynamic> item) {
+  static String _itemQuantityPrice(Map<String, dynamic> item, {String? batchVal, String? expVal}) {
     final qty = _numValue(item['qty']);
     final unit = _stringValue(item['unit']).isNotEmpty ? _stringValue(item['unit']) : 'Pcs';
     final harga = _numValue(item['harga']);
     final qtyText = qty.toStringAsFixed(qty % 1 == 0 ? 0 : 2);
+    if (batchVal != null && expVal != null) {
+      return '$batchVal - $expVal  $qtyText x ${_currency(harga)}';
+    }
     return '$qtyText $unit x ${_currency(harga)}';
   }
 
@@ -1206,6 +1241,43 @@ class DetailPrintActionsHelper {
       return '$leftText $rightText';
     }
     return '$leftText${' ' * available}$rightText';
+  }
+
+  /// Menghasilkan list baris: baris pertama [label  ...  value_awal],
+  /// baris berikutnya (wrap) rata kanan (diisi spasi di kiri).
+  static List<String> _rightAlignLines(String label, String value, {int? width}) {
+    final int w = width ?? _currentPrintWidth;
+    final lbl = label.trim();
+    final val = value.trim().isEmpty ? '-' : value.trim();
+    final maxValWidth = w - lbl.length - 1;
+
+    final chunks = <String>[];
+    var remaining = val;
+    while (remaining.isNotEmpty) {
+      if (remaining.length <= maxValWidth) {
+        chunks.add(remaining);
+        break;
+      }
+      int cut = maxValWidth;
+      while (cut > 0 && remaining[cut] != ' ') cut--;
+      if (cut == 0) cut = maxValWidth;
+      chunks.add(remaining.substring(0, cut).trim());
+      remaining = remaining.substring(cut).trim();
+    }
+
+    final result = <String>[];
+    for (int i = 0; i < chunks.length; i++) {
+      final chunk = chunks[i];
+      final pad = w - (i == 0 ? lbl.length + 1 : 0) - chunk.length;
+      if (i == 0) {
+        // Baris pertama: label kiri, value kanan — pakai 2+ spasi agar regex preview aktif
+        result.add('$lbl${' ' * (pad < 2 ? 2 : pad)}$chunk');
+      } else {
+        // Baris lanjutan: tandai dengan sentinel \x00R: agar preview render rata kanan
+        result.add('\x00R:$chunk');
+      }
+    }
+    return result;
   }
 
   static String _wrapText(String value, {int? width}) {
@@ -1253,6 +1325,17 @@ class DetailPrintActionsHelper {
     if (value is num) return value;
     if (value is String) return num.tryParse(value) ?? 0;
     return 0;
+  }
+
+  /// Format tanggal expired dari YYYY-MM-DD → DD/MM/YYYY.
+  /// Jika kosong atau tidak valid, kembalikan 'N/A'.
+  static String _formatExpDate(String raw) {
+    if (raw.isEmpty) return 'N/A';
+    final parts = raw.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return raw; // kembalikan apa adanya jika format tidak dikenal
   }
 
   static String _currency(num value) {
@@ -1368,15 +1451,9 @@ class DetailPrintActionsHelper {
         _snack(context, 'Sesi habis. Silakan login ulang.', isError: true);
         return;
       }
-      if (e.statusCode == 403) {
-        _snack(context, 'Anda tidak punya akses ke data ini.', isError: true);
-        return;
-      }
-      if (e.statusCode == 400) {
-        _snack(context, e.message, isError: true);
-        return;
-      }
-      _snack(context, e.message, isError: true);
+      // Untuk 403, tampilkan pesan dari backend (sudah informatif)
+      // Misal: 'Unauthorized' atau pesan khusus dari controller
+      _snack(context, e.message.isNotEmpty ? e.message : 'Anda tidak punya akses ke data ini.', isError: true);
       return;
     }
     _snack(context, fallback, isError: true);

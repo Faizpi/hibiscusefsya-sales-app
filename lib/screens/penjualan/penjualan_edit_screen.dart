@@ -56,7 +56,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     super.initState();
     final d = widget.data;
     _pelangganController = TextEditingController(text: d.pelanggan ?? '');
-    _emailController = TextEditingController(text: d.email ?? '');
+    _emailController = TextEditingController(text: d.noTelepon ?? '');
     _alamatPenagihanController =
         TextEditingController(text: d.alamatPenagihan ?? '');
     _memoController = TextEditingController(text: d.memo ?? '');
@@ -202,14 +202,14 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
         );
     final scannedName =
         (result['nama'] ?? matched?.nama ?? '').toString().trim();
-    final scannedEmail =
-        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedNoTelp =
+        (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _selectedKontak = matched;
       _pelangganController.text = scannedName;
-      _emailController.text = scannedEmail;
+      _emailController.text = scannedNoTelp;
       _alamatPenagihanController.text = scannedAlamat;
     });
   }
@@ -380,7 +380,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
           : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
       await provider.updatePenjualan(widget.data.id, {
         'pelanggan': _selectedKontak?.nama ?? _pelangganController.text,
-        'email':
+        'no_telepon':
             _emailController.text.isNotEmpty ? _emailController.text : null,
         'alamat_penagihan': _alamatPenagihanController.text.isNotEmpty
             ? _alamatPenagihanController.text
@@ -524,7 +524,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                     setState(() {
                       _selectedKontak = v;
                       _pelangganController.text = v?.nama ?? '';
-                      _emailController.text = v?.email ?? '';
+                      _emailController.text = v?.noTelp ?? '';
                       _alamatPenagihanController.text = v?.alamat ?? '';
                     });
                   },
@@ -559,10 +559,10 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined, size: 20),
+                labelText: 'No. Telepon',
+                prefixIcon: Icon(Icons.phone_outlined, size: 20),
               ),
-              keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -941,6 +941,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                                   child: DatePickerField(
                                     label: 'Exp',
                                     selectedDate: item.expDate,
+                                    firstDate: DateTime.now(),
                                     onDateSelected: (d) =>
                                         setState(() => item.expDate = d),
                                   ),

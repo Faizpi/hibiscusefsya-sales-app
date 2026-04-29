@@ -492,6 +492,7 @@ class _PenerimaanCreateScreenState extends State<PenerimaanCreateScreen> {
                             child: DatePickerField(
                               label: 'Exp Date',
                               selectedDate: item.expDate,
+                              firstDate: DateTime.now(),
                               onDateSelected: (d) =>
                                   setState(() => item.expDate = d),
                             ),

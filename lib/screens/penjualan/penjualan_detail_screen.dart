@@ -203,8 +203,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                   ),
                   const Divider(height: 24),
                   _InfoRow('Pelanggan', d.pelanggan ?? '-'),
-                  if (d.email != null && d.email!.isNotEmpty)
-                    _InfoRow('Email', d.email!),
+                  if (d.noTelepon != null && d.noTelepon!.isNotEmpty)
+                    _InfoRow('No. Telepon', d.noTelepon!),
                   if (d.alamatPenagihan != null &&
                       d.alamatPenagihan!.isNotEmpty)
                     _InfoRow('Alamat Penagihan', d.alamatPenagihan!),
@@ -215,6 +215,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                     _InfoRow('Tipe Harga', d.tipeHarga!),
                   _InfoRow('Gudang', d.gudangName),
                   _InfoRow('Sales', d.userName),
+                  if (d.userNoTelp.isNotEmpty)
+                    _InfoRow('No. Telp Sales', d.userNoTelp),
                   if (d.noReferensi != null && d.noReferensi!.isNotEmpty)
                     _InfoRow('No. Referensi', d.noReferensi!),
                   if (d.tag != null && d.tag!.isNotEmpty) _InfoRow('Tag', d.tag!),
@@ -345,16 +347,31 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
           if (d.lampiranPaths != null && d.lampiranPaths!.isNotEmpty)
             LampiranSection(paths: d.lampiranPaths!),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add_a_photo),
-            label: const Text('Tambah Lampiran via Kamera'),
-            onPressed: () async {
-              await DetailPrintActionsHelper.uploadLampiran(
-                context,
-                type: 'penjualan',
-                id: widget.id,
+          // Tombol tambah lampiran: hanya pemilik transaksi, admin, atau super_admin
+          Consumer<AuthProvider>(
+            builder: (ctx, authProvider, _) {
+              final currentUser = authProvider.user;
+              if (currentUser == null || currentUser.isSpectator) {
+                return const SizedBox.shrink();
+              }
+              final isOwner = currentUser.isUser &&
+                  d.userId != null &&
+                  d.userId == currentUser.id;
+              final canUpload =
+                  isOwner || currentUser.isAdmin || currentUser.isSuperAdmin;
+              if (!canUpload) return const SizedBox.shrink();
+              return ElevatedButton.icon(
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Tambah Lampiran via Kamera'),
+                onPressed: () async {
+                  await DetailPrintActionsHelper.uploadLampiran(
+                    context,
+                    type: 'penjualan',
+                    id: widget.id,
+                  );
+                  _loadDetail();
+                },
               );
-              _loadDetail();
             },
           ),
           const SizedBox(height: 24),

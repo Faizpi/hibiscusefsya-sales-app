@@ -156,18 +156,30 @@ class _PenggunaListScreenState extends State<PenggunaListScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color:
-                                  _roleColor(role).withAlpha(isDark ? 35 : 20),
+                              color: _roleColor(role).withAlpha(isDark ? 35 : 20),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Center(
-                              child: Text(
-                                (item['name'] ?? '?')[0].toUpperCase(),
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: _roleColor(role)),
-                              ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: item['avatar_url'] != null
+                                  ? Image.network(
+                                      item['avatar_url'] as String,
+                                      fit: BoxFit.cover,
+                                      width: 44,
+                                      height: 44,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(
+                                          (item['name'] ?? '?')[0].toUpperCase(),
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _roleColor(role)),
+                                        ),
+                                      ),
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        (item['name'] ?? '?')[0].toUpperCase(),
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _roleColor(role)),
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 14),

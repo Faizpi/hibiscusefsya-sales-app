@@ -7,6 +7,8 @@ class DatePickerField extends StatelessWidget {
   final ValueChanged<DateTime> onDateSelected;
   final bool readOnly;
   final String? Function(DateTime?)? validator;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
 
   const DatePickerField({
     super.key,
@@ -15,12 +17,17 @@ class DatePickerField extends StatelessWidget {
     required this.onDateSelected,
     this.readOnly = false,
     this.validator,
+    this.firstDate,
+    this.lastDate,
   });
 
   static final _displayFormat = DateFormat('dd/MM/yyyy');
 
   @override
   Widget build(BuildContext context) {
+    final effectiveFirstDate = firstDate ?? DateTime(2020);
+    final effectiveLastDate = lastDate ?? DateTime(2100);
+
     return TextFormField(
       readOnly: true,
       controller: TextEditingController(
@@ -38,8 +45,8 @@ class DatePickerField extends StatelessWidget {
               final picked = await showDatePicker(
                 context: context,
                 initialDate: selectedDate ?? DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
+                firstDate: effectiveFirstDate,
+                lastDate: effectiveLastDate,
               );
               if (picked != null) {
                 onDateSelected(picked);

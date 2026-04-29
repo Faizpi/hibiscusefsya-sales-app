@@ -6,6 +6,7 @@ class UserModel {
   final Map<String, bool> permissions;
   final String? alamat;
   final String? noTelp;
+  final String? avatarUrl;
   final int? gudangId;
   final int? currentGudangId;
 
@@ -17,6 +18,7 @@ class UserModel {
     this.permissions = const {},
     this.alamat,
     this.noTelp,
+    this.avatarUrl,
     this.gudangId,
     this.currentGudangId,
   });
@@ -42,6 +44,7 @@ class UserModel {
       permissions: permissionMap,
       alamat: json['alamat'],
       noTelp: json['no_telp'],
+      avatarUrl: json['avatar_url'],
       gudangId: _parseInt(json['gudang_id'] ?? nestedGudang?['id']),
       currentGudangId: _parseInt(json['current_gudang_id']),
     );
@@ -63,6 +66,7 @@ class UserModel {
         'permissions': permissions,
         'alamat': alamat,
         'no_telp': noTelp,
+        'avatar_url': avatarUrl,
         'gudang_id': gudangId,
         'current_gudang_id': currentGudangId,
       };

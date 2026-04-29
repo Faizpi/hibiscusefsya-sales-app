@@ -626,6 +626,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildInitialsAvatar(dynamic user) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: AppTheme.mainGradient(context),
+      ),
+      child: Center(
+        child: Text(
+          user?.name?.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBerandaTab() {
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final menuAspectRatio = textScale > 1.05 ? 0.72 : 0.80;
@@ -764,7 +785,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 42,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: AppTheme.mainGradient(context),
+                              gradient: user?.avatarUrl == null
+                                  ? AppTheme.mainGradient(context)
+                                  : null,
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.primaryColor.withAlpha(32),
@@ -773,17 +796,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            child: Center(
-                              child: Text(
-                                user?.name.isNotEmpty == true
-                                    ? user!.name[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            child: ClipOval(
+                              child: user?.avatarUrl != null
+                                  ? Image.network(
+                                      user!.avatarUrl!,
+                                      fit: BoxFit.cover,
+                                      width: 42,
+                                      height: 42,
+                                      errorBuilder: (_, __, ___) =>
+                                          _buildInitialsAvatar(user),
+                                    )
+                                  : _buildInitialsAvatar(user),
                             ),
                           ),
                         ),

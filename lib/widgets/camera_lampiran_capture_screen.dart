@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../utils/location_helper.dart';
 
@@ -83,7 +86,7 @@ class _CameraLampiranCaptureScreenState
 
     final controller = CameraController(
       selected,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
@@ -172,6 +175,143 @@ class _CameraLampiranCaptureScreenState
     return '$day, ${dt.day} $month ${dt.year} $hh:$mm:$ss';
   }
 
+  /// Burn teks geo-tag langsung ke piksel gambar menggunakan dart:ui Canvas.
+  /// Mengembalikan path file baru yang sudah di-stamp.
+  Future<String> _stampGeoTagOnImage(
+    String originalPath, {
+    required DateTime capturedAt,
+    required String placeLabel,
+    required String coordinateLabel,
+  }) async {
+    // Baca bytes gambar asli
+    final originalBytes = await File(originalPath).readAsBytes();
+    final codec = await ui.instantiateImageCodec(originalBytes);
+    final frame = await codec.getNextFrame();
+    final originalImage = frame.image;
+
+    final imgW = originalImage.width.toDouble();
+    final imgH = originalImage.height.toDouble();
+
+    // Tentukan ukuran font proporsional terhadap lebar gambar (sekitar 2.2% lebar)
+    final fontSize = (imgW * 0.022).clamp(14.0, 36.0);
+    final padding = fontSize * 0.6;
+    final lineSpacing = fontSize * 1.5;
+
+    final lines = [
+      'Waktu  : ${_formatDateTimeId(capturedAt)}',
+      'Tempat : $placeLabel',
+      'Koordinat: $coordinateLabel',
+    ];
+
+    // Hitung tinggi kotak latar (3 baris + padding atas/bawah)
+    final boxH = lineSpacing * lines.length + padding * 2;
+
+    // Siapkan canvas
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, imgW, imgH));
+
+    // Gambar foto asli
+    canvas.drawImage(originalImage, Offset.zero, Paint());
+
+    // Gambar latar semi-transparan di bagian bawah
+    final bgPaint = Paint()
+      ..color = const Color(0xCC000000); // hitam 80%
+    canvas.drawRect(
+      Rect.fromLTWH(0, imgH - boxH, imgW, boxH),
+      bgPaint,
+    );
+
+    // Gambar teks tiap baris
+    for (int i = 0; i < lines.length; i++) {
+      final yTop = imgH - boxH + padding + i * lineSpacing;
+      _drawTextLine(
+        canvas,
+        lines[i],
+        left: padding,
+        top: yTop,
+        fontSize: fontSize,
+        maxWidth: imgW - padding * 2,
+      );
+    }
+
+    // Render ke gambar final
+    final picture = recorder.endRecording();
+    final stampedImage = await picture.toImage(imgW.toInt(), imgH.toInt());
+    final byteData =
+        await stampedImage.toByteData(format: ui.ImageByteFormat.png);
+    final stampedBytes = byteData!.buffer.asUint8List();
+
+    // Simpan ke file baru di temp directory
+    final tempDir = await getTemporaryDirectory();
+    final stampedPath =
+        '${tempDir.path}/lampiran_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    await File(stampedPath).writeAsBytes(stampedBytes);
+
+    return stampedPath;
+  }
+
+  void _drawTextLine(
+    Canvas canvas,
+    String text, {
+    required double left,
+    required double top,
+    required double fontSize,
+    required double maxWidth,
+  }) {
+    // Shadow/outline agar teks terbaca di latar apapun
+    final shadowPainter = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontSize: fontSize,
+        fontWeight: ui.FontWeight.w700,
+        textDirection: ui.TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '...',
+      ),
+    )
+      ..pushStyle(ui.TextStyle(
+        color: const ui.Color(0xFF000000),
+        fontSize: fontSize,
+        fontWeight: ui.FontWeight.w700,
+      ))
+      ..addText(text);
+    final shadowParagraph = shadowPainter.build()
+      ..layout(ui.ParagraphConstraints(width: maxWidth));
+
+    // Outline (gambar 4 arah)
+    for (final offset in [
+      const Offset(-1, -1),
+      const Offset(1, -1),
+      const Offset(-1, 1),
+      const Offset(1, 1),
+    ]) {
+      canvas.drawParagraph(
+        shadowParagraph,
+        Offset(left + offset.dx, top + offset.dy),
+      );
+    }
+
+    // Teks utama putih
+    final textPainter = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontSize: fontSize,
+        fontWeight: ui.FontWeight.w700,
+        textDirection: ui.TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '...',
+      ),
+    )
+      ..pushStyle(ui.TextStyle(
+        color: const ui.Color(0xFFFFFFFF),
+        fontSize: fontSize,
+        fontWeight: ui.FontWeight.w700,
+      ))
+      ..addText(text);
+    final textParagraph = textPainter.build()
+      ..layout(ui.ParagraphConstraints(width: maxWidth));
+
+    canvas.drawParagraph(textParagraph, Offset(left, top));
+  }
+
   Future<void> _capture() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized || _isCapturing) {
@@ -182,10 +322,19 @@ class _CameraLampiranCaptureScreenState
       setState(() => _isCapturing = true);
       final capturedAt = DateTime.now();
       final xFile = await controller.takePicture();
+
+      // Stamp geo-tag ke gambar
+      final stampedPath = await _stampGeoTagOnImage(
+        xFile.path,
+        capturedAt: capturedAt,
+        placeLabel: _placeLabel,
+        coordinateLabel: _coordinateLabel,
+      );
+
       if (!mounted) return;
       Navigator.of(context).pop(
         CameraLampiranResult(
-          imagePath: xFile.path,
+          imagePath: stampedPath,
           capturedAt: capturedAt,
           placeLabel: _placeLabel,
           coordinateLabel: _coordinateLabel,

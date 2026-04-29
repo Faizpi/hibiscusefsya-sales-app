@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/pembelian_provider.dart';
 import '../../providers/produk_provider.dart';
@@ -11,7 +10,6 @@ import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/koordinat_lokasi_field.dart';
-import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/searchable_dropdown_form_field.dart';
 import '../scanner/barcode_scanner_screen.dart';
 import '../../widgets/glass_container.dart';
@@ -43,7 +41,6 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
   double _taxPercentage = 0;
   double _diskonAkhir = 0;
   final List<_ItemRow> _items = [];
-  List<PlatformFile> _lampiran = [];
   bool _isSubmitting = false;
 
   @override
@@ -308,31 +305,7 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
             .toList(),
       };
 
-      PembelianModel createdModel;
-      if (_lampiran.isNotEmpty) {
-        final fields = <String, String>{};
-        data.forEach((key, value) {
-          if (value == null) return;
-          if (key == 'items') {
-            final items = value as List;
-            for (int idx = 0; idx < items.length; idx++) {
-              (items[idx] as Map).forEach((k, v) {
-                if (v != null) fields['items[$idx][$k]'] = v.toString();
-              });
-            }
-          } else {
-            fields[key] = value.toString();
-          }
-        });
-        final paths =
-            _lampiran.where((f) => f.path != null).map((f) => f.path!).toList();
-        createdModel = await provider.createPembelianMultipart(
-          fields: fields,
-          lampiran: paths,
-        );
-      } else {
-        createdModel = await provider.createPembelian(data);
-      }
+      PembelianModel createdModel = await provider.createPembelian(data);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Pembelian berhasil dibuat!'),
@@ -724,12 +697,6 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Lampiran
-            LampiranPickerWidget(
-              files: _lampiran,
-              onFilesChanged: (files) => setState(() => _lampiran = files),
-              fileNamePrefix: 'PR',
-            ),
             const SizedBox(height: 24),
 
             // Submit

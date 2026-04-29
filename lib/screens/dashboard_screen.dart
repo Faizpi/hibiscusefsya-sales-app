@@ -254,18 +254,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _StatCardData(
                     label: 'KUNJUNGAN',
                     value: '${data['kunjungan_bulan_ini'] ?? 0}',
-                    sub: '${data['kunjungan_bulan_ini'] ?? 0} kunjungan',
+                    sub: '${data['kunjungan_bulan_ini'] ?? 0} kunjungan bulan ini',
                     color: AppTheme.infoColor,
                     icon: Icons.location_on_outlined,
                   ),
                   _StatCardData(
-                    label: 'CANCELED',
-                    value:
-                        '${data['canceled_bulan_ini'] ?? data['pending_approval'] ?? 0}',
-                    sub:
-                        '${data['canceled_bulan_ini'] ?? data['pending_approval'] ?? 0} transaksi',
+                    label: 'PENDING',
+                    value: '${data['pending_approval'] ?? 0}',
+                    sub: 'menunggu persetujuan',
                     color: AppTheme.dangerColor,
-                    icon: Icons.cancel_outlined,
+                    icon: Icons.pending_actions_outlined,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -273,19 +271,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildStatRow(
                   _StatCardData(
                     label: 'BIAYA MASUK',
-                    value:
-                        Formatters.currency(data['biaya_masuk_bulan_ini'] ?? 0),
-                    sub: '',
+                    value: Formatters.currency(data['biaya_masuk_bulan_ini'] ?? 0),
+                    sub: 'penerimaan bulan ini',
                     color: AppTheme.successColor,
                     icon: Icons.arrow_downward_rounded,
                   ),
                   _StatCardData(
                     label: 'BIAYA KELUAR',
-                    value: Formatters.currency(data['biaya_bulan_ini'] ??
-                        data['biaya_keluar_bulan_ini'] ??
-                        0),
-                    sub: '',
-                    color: const Color(0xFF14B8A6),
+                    value: Formatters.currency(data['biaya_keluar_bulan_ini'] ?? data['biaya_bulan_ini'] ?? 0),
+                    sub: 'pengeluaran bulan ini',
+                    color: const Color(0xFFEF4444),
                     icon: Icons.arrow_upward_rounded,
                   ),
                 ),

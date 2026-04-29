@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
@@ -16,8 +18,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
   bool _isSubmitting = false;
+  bool _isUploadingAvatar = false;
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
   late TextEditingController _telpController;
   late TextEditingController _alamatController;
 
@@ -25,17 +27,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     final user = Provider.of<AuthProvider>(context, listen: false).user;
-    _nameController = TextEditingController(text: user?.name ?? '');
     _telpController = TextEditingController(text: user?.noTelp ?? '');
     _alamatController = TextEditingController(text: user?.alamat ?? '');
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _telpController.dispose();
     _alamatController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 82, // compress by image_picker
+      );
+      if (picked == null) return;
+      if (!mounted) return;
+
+      setState(() => _isUploadingAvatar = true);
+      try {
+        await Provider.of<AuthProvider>(context, listen: false)
+            .uploadAvatar(File(picked.path));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Foto profil berhasil diupdate'),
+              backgroundColor: AppTheme.successColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal upload foto: $e'),
+              backgroundColor: AppTheme.dangerColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      }
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    } catch (_) {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
+  }
+
+  void _showAvatarSourceSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withAlpha(80),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text('Ambil dari Kamera'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAvatar(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text('Pilih dari Galeri'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAvatar(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -44,7 +133,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       await Provider.of<AuthProvider>(context, listen: false).updateProfile(
-        name: _nameController.text.trim(),
         noTelp: _telpController.text.trim(),
         alamat: _alamatController.text.trim(),
       );
@@ -123,37 +211,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const SizedBox(height: 40),
-                              // Avatar
-                              Container(
-                                width: 84,
-                                height: 84,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withAlpha(25),
-                                  border: Border.all(
-                                      color: Colors.white.withAlpha(50),
-                                      width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(20),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    user.name.isNotEmpty
-                                        ? user.name[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                // Avatar dengan tombol kamera
+                                GestureDetector(
+                                  onTap: _showAvatarSourceSheet,
+                                  child: Stack(
+                                    alignment: Alignment.bottomRight,
+                                    children: [
+                                      Container(
+                                        width: 84,
+                                        height: 84,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white.withAlpha(25),
+                                          border: Border.all(
+                                              color: Colors.white.withAlpha(80),
+                                              width: 3),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withAlpha(25),
+                                              blurRadius: 16,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipOval(
+                                          child: _isUploadingAvatar
+                                              ? const Center(
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : user.avatarUrl != null
+                                                  ? Image.network(
+                                                      user.avatarUrl!,
+                                                      fit: BoxFit.cover,
+                                                      width: 84,
+                                                      height: 84,
+                                                      errorBuilder: (_, __, ___) => Center(
+                                                        child: Text(
+                                                          user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                                          style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Center(
+                                                      child: Text(
+                                                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                                                      ),
+                                                    ),
+                                        ),
+                                      ),
+                                      // Kamera badge
+                                      Container(
+                                        width: 26, height: 26,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 4)
+                                          ],
+                                        ),
+                                        child: const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF3B82F6)),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
                               const SizedBox(height: 14),
                               Text(
                                 user.name,
@@ -542,20 +666,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 28),
-            Text('Nama *',
+            // Nama (readonly)
+            Text('Nama',
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.textPrimaryColor(context))),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                hintText: 'Masukkan nama',
-                prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+              initialValue: user.name,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                suffixIcon: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bgSecondaryColor(context),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.lock_outline,
+                      size: 14, color: AppTheme.textTertiaryColor(context)),
+                ),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
+              enabled: false,
             ),
             const SizedBox(height: 20),
             Text('Email',

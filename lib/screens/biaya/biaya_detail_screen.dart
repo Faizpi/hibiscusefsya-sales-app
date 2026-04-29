@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/biaya_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/biaya_provider.dart';
 import '../../utils/formatters.dart';
@@ -245,16 +246,31 @@ class _BiayaDetailScreenState extends State<BiayaDetailScreen> {
           if (d.lampiranPaths != null && d.lampiranPaths!.isNotEmpty)
             LampiranSection(paths: d.lampiranPaths!),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add_a_photo),
-            label: const Text('Tambah Lampiran via Kamera'),
-            onPressed: () async {
-              await DetailPrintActionsHelper.uploadLampiran(
-                context,
-                type: 'biaya',
-                id: widget.id,
+          // Tombol tambah lampiran: hanya pemilik transaksi, admin, atau super_admin
+          Consumer<AuthProvider>(
+            builder: (ctx, authProvider, _) {
+              final currentUser = authProvider.user;
+              if (currentUser == null || currentUser.isSpectator) {
+                return const SizedBox.shrink();
+              }
+              final isOwner = currentUser.isUser &&
+                  d.userId != null &&
+                  d.userId == currentUser.id;
+              final canUpload =
+                  isOwner || currentUser.isAdmin || currentUser.isSuperAdmin;
+              if (!canUpload) return const SizedBox.shrink();
+              return ElevatedButton.icon(
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Tambah Lampiran via Kamera'),
+                onPressed: () async {
+                  await DetailPrintActionsHelper.uploadLampiran(
+                    context,
+                    type: 'biaya',
+                    id: widget.id,
+                  );
+                  _loadDetail();
+                },
               );
-              _loadDetail();
             },
           ),
           const SizedBox(height: 24),

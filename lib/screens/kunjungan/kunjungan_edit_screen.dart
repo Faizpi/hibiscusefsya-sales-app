@@ -57,7 +57,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
     super.initState();
     final d = widget.data;
     _memoController = TextEditingController(text: d.memo ?? '');
-    _emailController = TextEditingController(text: d.salesEmail ?? '');
+    _emailController = TextEditingController(text: d.salesNoTelepon ?? '');
     _alamatController = TextEditingController(text: d.salesAlamat ?? '');
     _kontakId = d.kontakId;
     _gudangId = d.gudangId;
@@ -142,14 +142,14 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
         );
     final scannedName =
         (result['nama'] ?? matched?.nama ?? '').toString().trim();
-    final scannedEmail =
-        (result['email'] ?? matched?.email ?? '').toString().trim();
+    final scannedNoTelp =
+        (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =
         (result['alamat'] ?? matched?.alamat ?? '').toString().trim();
     setState(() {
       _kontakId = matched?.id;
 
-      _emailController.text = scannedEmail;
+      _emailController.text = scannedNoTelp;
       _alamatController.text = scannedAlamat;
     });
   }
@@ -373,7 +373,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
             ? _koordinatController.text
             : null,
         'sales_nama': selectedKontak?.nama,
-        'sales_email': _emailController.text.trim().isNotEmpty
+        'sales_no_telepon': _emailController.text.trim().isNotEmpty
             ? _emailController.text.trim()
             : null,
         'sales_alamat': _alamatController.text.trim().isNotEmpty
@@ -541,7 +541,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
                   onChanged: (v) {
                     setState(() {
                       _kontakId = v?.id;
-                      _emailController.text = v?.email ?? _emailController.text;
+                      _emailController.text = v?.noTelp ?? _emailController.text;
                       _alamatController.text =
                           v?.alamat ?? _alamatController.text;
                     });
@@ -573,15 +573,15 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Email & Alamat Pelanggan (dari kontak yang dipilih/scan)
+            // No. Telepon & Alamat Pelanggan (dari kontak yang dipilih/scan)
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                  labelText: 'Email Pelanggan',
+                  labelText: 'No. Telepon Pelanggan',
                   hintText: 'Otomatis dari kontak',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email_outlined, size: 20)),
-              keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icon(Icons.phone_outlined, size: 20)),
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -798,6 +798,7 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
                                   child: DatePickerField(
                                     label: 'Exp Date',
                                     selectedDate: item.expDate,
+                                    firstDate: DateTime.now(),
                                     onDateSelected: (d) =>
                                         setState(() => item.expDate = d),
                                   ),
