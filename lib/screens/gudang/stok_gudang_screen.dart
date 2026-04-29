@@ -178,7 +178,7 @@ class _StokGudangScreenState extends State<StokGudangScreen> {
       final dashboard = Provider.of<DashboardProvider>(context, listen: false);
       final bytes = await dashboard.exportStokExcel(gudangId: gudangId);
 
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await getApplicationSupportDirectory();
       final fileName =
           'Stok_Gudang_${DateTime.now().toIso8601String().split('T')[0]}.xlsx';
       final file = File('${dir.path}/$fileName');

@@ -113,175 +113,177 @@ class _PenggunaFormScreenState extends State<PenggunaFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Nama & Email
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _namaCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Nama *', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Nama wajib diisi'
-                      : null,
-                ),
+            // Nama
+            TextFormField(
+              controller: _namaCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Nama *',
+                prefixIcon: Icon(Icons.person_outline),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _emailCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Email *', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Email wajib diisi'
-                      : null,
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
+            ),
+            const SizedBox(height: 14),
 
-            // No. Telepon & Alamat
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _telpCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'No. Telepon', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.phone,
-                ),
+            // Email
+            TextFormField(
+              controller: _emailCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Email *',
+                prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _alamatCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Alamat', border: OutlineInputBorder()),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Email wajib diisi' : null,
+            ),
+            const SizedBox(height: 14),
 
-            // Role & Gudang
-            Row(children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                      labelText: 'Role *', border: OutlineInputBorder()),
-                  value: _role,
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'super_admin', child: Text('Super Admin')),
-                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                    DropdownMenuItem(
-                        value: 'spectator', child: Text('Spectator')),
-                    DropdownMenuItem(
-                        value: 'user', child: Text('User (Sales)')),
-                  ],
-                  onChanged: (v) => setState(() => _role = v ?? 'user'),
-                ),
+            // No. Telepon
+            TextFormField(
+              controller: _telpCtrl,
+              decoration: const InputDecoration(
+                labelText: 'No. Telepon',
+                prefixIcon: Icon(Icons.phone_outlined),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Consumer<GudangProvider>(
-                  builder: (ctx, gudangProvider, _) {
-                    return DropdownButtonFormField<int>(
-                      isExpanded: true,
-                      value: _gudangId,
-                      decoration: InputDecoration(
-                        labelText: 'Gudang *',
-                        hintText: '--- Pilih Gudang ---',
-                        helperText: _role == 'user'
-                            ? 'Wajib untuk role user'
-                            : 'Wajib untuk role user, dan tidak digunakan oleh Admin & Spectator (di assign terpisah).',
-                        helperMaxLines: 3,
-                        border: const OutlineInputBorder(),
-                      ),
-                      items: gudangProvider.items
-                          .map((g) => DropdownMenuItem(
-                              value: g.id, child: Text(g.namaGudang)))
-                          .toList(),
-                      onChanged: (v) => setState(() => _gudangId = v),
-                      validator: (v) {
-                        if (_role == 'user' && v == null) {
-                          return 'Gudang wajib dipilih untuk role user';
-                        }
-                        return null;
-                      },
-                    );
-                  },
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 14),
 
-            // Password & Konfirmasi Password
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _passwordCtrl,
+            // Alamat
+            TextFormField(
+              controller: _alamatCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Alamat',
+                prefixIcon: Icon(Icons.location_on_outlined),
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 14),
+
+            // Role
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Role *',
+                prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+                border: OutlineInputBorder(),
+              ),
+              value: _role,
+              items: const [
+                DropdownMenuItem(
+                    value: 'super_admin', child: Text('Super Admin')),
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                DropdownMenuItem(
+                    value: 'spectator', child: Text('Spectator')),
+                DropdownMenuItem(
+                    value: 'user', child: Text('User (Sales)')),
+              ],
+              onChanged: (v) => setState(() => _role = v ?? 'user'),
+            ),
+            const SizedBox(height: 14),
+
+            // Gudang
+            Consumer<GudangProvider>(
+              builder: (ctx, gudangProvider, _) {
+                return DropdownButtonFormField<int>(
+                  isExpanded: true,
+                  value: _gudangId,
                   decoration: InputDecoration(
-                    labelText: isEdit ? 'Password' : 'Password *',
+                    labelText: 'Gudang',
+                    prefixIcon: const Icon(Icons.warehouse_outlined),
+                    hintText: '--- Pilih Gudang ---',
+                    helperText: _role == 'user'
+                        ? 'Wajib untuk role User/Sales'
+                        : 'Opsional untuk Admin & Spectator (diatur terpisah)',
+                    helperMaxLines: 2,
                     border: const OutlineInputBorder(),
                   ),
-                  obscureText: true,
+                  items: gudangProvider.items
+                      .map((g) => DropdownMenuItem(
+                          value: g.id, child: Text(g.namaGudang)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _gudangId = v),
                   validator: (v) {
-                    if (!isEdit && (v == null || v.isEmpty)) {
-                      return 'Password wajib diisi';
-                    }
-                    if (v != null && v.isNotEmpty && v.length < 8) {
-                      return 'Minimal 8 karakter';
+                    if (_role == 'user' && v == null) {
+                      return 'Gudang wajib dipilih untuk role user';
                     }
                     return null;
                   },
-                ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // Password
+            TextFormField(
+              controller: _passwordCtrl,
+              decoration: InputDecoration(
+                labelText: isEdit ? 'Password Baru (opsional)' : 'Password *',
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _passwordConfirmCtrl,
-                  decoration: InputDecoration(
-                    labelText: isEdit
-                        ? 'Konfirmasi Password'
-                        : 'Konfirmasi Password *',
-                    border: const OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (v) {
-                    if (_passwordCtrl.text.isNotEmpty &&
-                        v != _passwordCtrl.text) {
-                      return 'Password tidak cocok';
-                    }
-                    if (!isEdit && (v == null || v.isEmpty)) {
-                      return 'Konfirmasi password wajib diisi';
-                    }
-                    return null;
-                  },
-                ),
+              obscureText: true,
+              validator: (v) {
+                if (!isEdit && (v == null || v.isEmpty)) {
+                  return 'Password wajib diisi';
+                }
+                if (v != null && v.isNotEmpty && v.length < 8) {
+                  return 'Minimal 8 karakter';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // Konfirmasi Password
+            TextFormField(
+              controller: _passwordConfirmCtrl,
+              decoration: InputDecoration(
+                labelText: isEdit
+                    ? 'Konfirmasi Password Baru'
+                    : 'Konfirmasi Password *',
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
               ),
-            ]),
-            const SizedBox(height: 24),
+              obscureText: true,
+              validator: (v) {
+                if (_passwordCtrl.text.isNotEmpty &&
+                    v != _passwordCtrl.text) {
+                  return 'Password tidak cocok';
+                }
+                if (!isEdit && (v == null || v.isEmpty)) {
+                  return 'Konfirmasi password wajib diisi';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 28),
 
             // Buttons
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Batal'),
-                ),
+            ElevatedButton(
+              onPressed: _isSubmitting ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(isEdit ? 'Simpan Perubahan' : 'Simpan User'),
-                ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text(isEdit ? 'Simpan Perubahan' : 'Simpan User'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
               ),
-            ]),
+              child: const Text('Batal'),
+            ),
           ],
         ),
       ),

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../models/export_options_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
+import '../../widgets/file_action_sheet.dart';
 import '../../widgets/glass_container.dart';
 
 class ExportReportScreen extends StatefulWidget {
@@ -193,69 +193,23 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     required String fileName,
     required String shareText,
   }) async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getApplicationSupportDirectory();
     final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('File tersimpan: ${file.path}'),
+      const SnackBar(
+        content: Text('File berhasil diunduh!'),
         backgroundColor: Colors.green,
       ),
     );
 
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.open_in_new),
-                title: const Text('Buka File'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final opened = await _openFile(file.path);
-                  if (!opened && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'File tidak bisa dibuka otomatis. Silakan bagikan file.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share),
-                title: const Text('Bagikan File'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await Share.shareXFiles(
-                    [XFile(file.path)],
-                    text: shareText,
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
+    await showFileActionSheet(
+      context,
+      file: file,
+      shareText: shareText,
     );
-  }
-
-  Future<bool> _openFile(String path) async {
-    final fileUri = Uri.file(path);
-    if (await canLaunchUrl(fileUri)) {
-      return await launchUrl(
-        fileUri,
-        mode: LaunchMode.externalApplication,
-      );
-    }
-    return false;
   }
 
   void _handleApiError(Object error, {required String actionLabel}) {

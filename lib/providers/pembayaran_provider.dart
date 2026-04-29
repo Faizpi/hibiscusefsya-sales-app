@@ -131,4 +131,9 @@ class PembayaranProvider with ChangeNotifier {
     await api.post('pembayaran/$id/uncancel');
     await fetchPembayaran(refresh: true);
   }
+
+  Future<List<int>> downloadHarianPdf({required String date}) async {
+    final api = ApiService(token: _token);
+    return await api.getBytes('pembayaran/export-harian-pdf', params: {'tanggal': date});
+  }
 }

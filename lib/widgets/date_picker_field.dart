@@ -25,7 +25,7 @@ class DatePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveFirstDate = firstDate ?? DateTime(2020);
+    final effectiveFirstDate = firstDate ?? DateTime(2026);
     final effectiveLastDate = lastDate ?? DateTime(2100);
 
     return TextFormField(

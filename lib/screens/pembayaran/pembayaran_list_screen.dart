@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/pembayaran_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/app_skeletons.dart';
+import '../../widgets/file_action_sheet.dart';
 import '../../widgets/glass_container.dart';
 import '../../widgets/summary_cards.dart';
 import 'pembayaran_detail_screen.dart';
@@ -47,6 +51,22 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
         flexibleSpace: Container(
           decoration: BoxDecoration(gradient: AppTheme.mainGradient(context)),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.white.withAlpha(28),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.picture_as_pdf, size: 18),
+              label: const Text('Export Tagihan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              onPressed: () => _showExportPdfDialog(context),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: (user != null && user.canCreate)
           ? FloatingActionButton(
@@ -260,5 +280,80 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showExportPdfDialog(BuildContext context) async {
+    DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Pilih Tanggal Invoice',
+    );
+
+    if (selectedDate != null) {
+      if (!context.mounted) return;
+      _downloadPdf(context, selectedDate);
+    }
+  }
+
+  Future<void> _downloadPdf(BuildContext context, DateTime date) async {
+    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Mengunduh PDF...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final provider = Provider.of<PembayaranProvider>(context, listen: false);
+      final bytes = await provider.downloadHarianPdf(date: dateStr);
+      if (!context.mounted) return;
+      Navigator.pop(context); // close dialog
+
+      final dir = await getApplicationSupportDirectory();
+      final fileName = 'Tagihan-Invoice-Harian-${dateStr.replaceAll('-', '')}.pdf';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PDF berhasil diunduh!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      await showFileActionSheet(
+        context,
+        file: file,
+        shareText: 'Tagihan Invoice Harian $dateStr',
+        subtitle: 'Tagihan Invoice Harian · $dateStr',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // close dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengunduh: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

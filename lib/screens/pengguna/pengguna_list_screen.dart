@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
@@ -153,31 +154,52 @@ class _PenggunaListScreenState extends State<PenggunaListScreen> {
                       child: Row(
                         children: [
                           Container(
-                            width: 44,
-                            height: 44,
+                            width: 46,
+                            height: 46,
                             decoration: BoxDecoration(
                               color: _roleColor(role).withAlpha(isDark ? 35 : 20),
-                              borderRadius: BorderRadius.circular(14),
+                              shape: BoxShape.circle,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: item['avatar_url'] != null
-                                  ? Image.network(
-                                      item['avatar_url'] as String,
+                            child: ClipOval(
+                              child: item['avatar_url'] != null &&
+                                      (item['avatar_url'] as String).isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: item['avatar_url'] as String,
                                       fit: BoxFit.cover,
-                                      width: 44,
-                                      height: 44,
-                                      errorBuilder: (_, __, ___) => Center(
+                                      width: 46,
+                                      height: 46,
+                                      placeholder: (_, __) => Center(
                                         child: Text(
-                                          (item['name'] ?? '?')[0].toUpperCase(),
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _roleColor(role)),
+                                          (item['name'] as String? ?? '?')
+                                              .substring(0, 1)
+                                              .toUpperCase(),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                              color: _roleColor(role)),
+                                        ),
+                                      ),
+                                      errorWidget: (_, __, ___) => Center(
+                                        child: Text(
+                                          (item['name'] as String? ?? '?')
+                                              .substring(0, 1)
+                                              .toUpperCase(),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                              color: _roleColor(role)),
                                         ),
                                       ),
                                     )
                                   : Center(
                                       child: Text(
-                                        (item['name'] ?? '?')[0].toUpperCase(),
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _roleColor(role)),
+                                        (item['name'] as String? ?? '?')
+                                            .substring(0, 1)
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                            color: _roleColor(role)),
                                       ),
                                     ),
                             ),

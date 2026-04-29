@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Internal app files directory (getApplicationDocumentsDirectory) -->
+    <files-path name="files" path="."/>
+    <!-- Flutter internal app_flutter directory -->
+    <files-path name="app_flutter" path="app_flutter/"/>
+    <!-- Cache directory (getTemporaryDirectory) -->
+    <cache-path name="cache" path="."/>
+    <!-- External storage (getExternalStorageDirectory) -->
+    <external-path name="external" path="."/>
+    <!-- External files dir -->
+    <external-files-path name="external_files" path="."/>
+</paths>
