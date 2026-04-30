@@ -44,9 +44,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: assets/images/hibiscusefsya1.png
+  image_path: assets/images/iconapk.jpeg
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: assets/images/hibiscusefsya1.png
+  adaptive_icon_foreground: assets/images/iconapk.jpeg
 
 flutter:
   uses-material-design: true
@@ -54,6 +54,7 @@ flutter:
   assets:
     - assets/images/hibiscusefsya1.png
     - assets/images/hibiscusefsya1-removebg-preview.png
+    - assets/images/iconapk.jpeg
 
   fonts:
     - family: Poppins
