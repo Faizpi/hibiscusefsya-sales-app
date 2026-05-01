@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../providers/pembayaran_provider.dart';
 import '../../providers/gudang_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/date_picker_field.dart';
 import '../../widgets/lampiran_picker_widget.dart';
 import '../../widgets/glass_container.dart';
@@ -104,7 +105,8 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
 
   void _updateTotalBayar() {
     setState(() {
-      _jumlahBayarController.text = _totalSelectedSisa.toStringAsFixed(0);
+      _jumlahBayarController.text =
+          _totalSelectedSisa > 0 ? Formatters.rupiahInput(_totalSelectedSisa) : '0';
     });
   }
 
@@ -126,7 +128,7 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
         'penjualan_ids': selectedInvoiceIds.toList(),
         'tgl_pembayaran': _tglPembayaran.toIso8601String().split('T')[0],
         'metode_pembayaran': _metodePembayaran,
-        'jumlah_bayar': double.tryParse(_jumlahBayarController.text) ?? 0,
+        'jumlah_bayar': Formatters.parseRupiah(_jumlahBayarController.text) ?? 0,
         'keterangan': _keteranganController.text,
       };
 
@@ -330,7 +332,7 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
                                 style: const TextStyle(fontSize: 10),
                               ),
                               Text(
-                                'Sisa: Rp ${inv.sisaTagihan.toStringAsFixed(0)}',
+                                'Sisa: ${Formatters.currency(inv.sisaTagihan)}',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: AppTheme.primaryColor,
@@ -365,7 +367,7 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
                           ),
                         ),
                         Text(
-                          'Rp ${_totalSelectedSisa.toStringAsFixed(0)}',
+                          Formatters.currency(_totalSelectedSisa),
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
@@ -412,7 +414,7 @@ class _PembayaranCreateScreenState extends State<PembayaranCreateScreen> {
               readOnly: true,
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Wajib diisi';
-                if ((double.tryParse(v) ?? 0) <= 0) return 'Harus lebih dari 0';
+                if ((Formatters.parseRupiah(v) ?? 0) <= 0) return 'Harus lebih dari 0';
                 return null;
               },
             ),

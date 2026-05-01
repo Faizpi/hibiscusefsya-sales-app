@@ -594,12 +594,19 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                                 child: TextFormField(
                                     key: ValueKey(
                                         'harga-$i-${_items[i].produk?.id}-${_items[i].harga}'),
-                                    initialValue: _items[i].harga.toString(),
+                                    initialValue:
+                                        Formatters.rupiahInput(_items[i].harga),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (v) => setState(() => _items[i]
-                                        .harga = double.tryParse(v) ?? 0))),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    inputFormatters: const [
+                                      RupiahInputFormatter(),
+                                    ],
+                                    onChanged: (v) => setState(() =>
+                                        _items[i].harga =
+                                            Formatters.parseRupiah(v) ?? 0))),
                             const SizedBox(width: 8),
                             Expanded(
                                 flex: 1,
@@ -607,9 +614,12 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                                     initialValue: _items[i].diskon.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Disc%', isDense: true),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (v) => setState(() => _items[i]
-                                        .diskon = double.tryParse(v) ?? 0))),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    onChanged: (v) => setState(() =>
+                                        _items[i].diskon =
+                                            Formatters.parseDecimal(v) ?? 0))),
                           ]),
                           const SizedBox(height: 8),
                           Align(
@@ -656,15 +666,17 @@ class _PembelianCreateScreenState extends State<PembelianCreateScreen> {
                       decoration: const InputDecoration(
                           labelText: 'Diskon Akhir (Rp)', isDense: true),
                       keyboardType: TextInputType.number,
+                      inputFormatters: const [RupiahInputFormatter()],
                       onChanged: (v) => setState(
-                          () => _diskonAkhir = double.tryParse(v) ?? 0)),
+                          () => _diskonAkhir = Formatters.parseRupiah(v) ?? 0)),
                   const SizedBox(height: 8),
                   TextFormField(
                       decoration: const InputDecoration(
                           labelText: 'Pajak (%)', isDense: true),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => setState(
-                          () => _taxPercentage = double.tryParse(v) ?? 0)),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (v) => setState(() =>
+                          _taxPercentage = Formatters.parseDecimal(v) ?? 0)),
                   const SizedBox(height: 8),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

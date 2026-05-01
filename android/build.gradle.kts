@@ -3,6 +3,11 @@ allprojects {
         google()
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.concurrent:concurrent-futures:1.2.0")
+        }
+    }
 }
 
 val newBuildDir: Directory =

@@ -1339,7 +1339,17 @@ class DetailPrintActionsHelper {
   }
 
   static String _currency(num value) {
-    return 'Rp ${value.toStringAsFixed(value % 1 == 0 ? 0 : 2).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')}' ;
+    // Indonesian Rupiah: dot = thousands, comma = decimal, 3 digits
+    final isNeg = value < 0;
+    final abs = value.abs();
+    final intPart = abs.truncate();
+    final fracPart = ((abs - intPart) * 1000).round();
+    final intStr = intPart.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '.',
+    );
+    final fracStr = fracPart.toString().padLeft(3, '0');
+    return '${isNeg ? '-' : ''}Rp $intStr,$fracStr';
   }
 
   static Future<Map<String, String>?> _getQrPayload(

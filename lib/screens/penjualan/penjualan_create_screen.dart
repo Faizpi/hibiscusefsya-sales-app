@@ -930,12 +930,21 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: TextFormField(
-                                    initialValue: _items[i].harga.toString(),
+                                    key: ValueKey(
+                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}-${_tipeHarga}'),
+                                    initialValue:
+                                        Formatters.rupiahInput(_items[i].harga),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    inputFormatters: const [
+                                      RupiahInputFormatter(),
+                                    ],
                                     onChanged: (v) => setState(() {
-                                      _items[i].harga = double.tryParse(v) ?? 0;
+                                      _items[i].harga =
+                                          Formatters.parseRupiah(v) ?? 0;
                                     }),
                                   ),
                                 ),
@@ -946,10 +955,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                     initialValue: _items[i].diskon.toString(),
                                     decoration: const InputDecoration(
                                         labelText: 'Disc%', isDense: true),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     onChanged: (v) => setState(() {
                                       _items[i].diskon =
-                                          double.tryParse(v) ?? 0;
+                                          Formatters.parseDecimal(v) ?? 0;
                                     }),
                                   ),
                                 ),
@@ -1111,16 +1122,22 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                         isDense: true,
                       ),
                       keyboardType: TextInputType.number,
-                      onChanged: (v) => setState(
-                          () => _diskonAkhir = double.tryParse(v) ?? 0),
+                      inputFormatters: _diskonAkhirIsPersen
+                          ? null
+                          : const [RupiahInputFormatter()],
+                      onChanged: (v) => setState(() => _diskonAkhir =
+                          _diskonAkhirIsPersen
+                              ? (Formatters.parseDecimal(v) ?? 0)
+                              : (Formatters.parseRupiah(v) ?? 0)),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       decoration: const InputDecoration(
                           labelText: 'Pajak (%)', isDense: true),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => setState(
-                          () => _taxPercentage = double.tryParse(v) ?? 0),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (v) => setState(() =>
+                          _taxPercentage = Formatters.parseDecimal(v) ?? 0),
                     ),
                     const SizedBox(height: 8),
                     Row(

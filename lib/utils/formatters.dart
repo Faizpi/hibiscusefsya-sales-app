@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Formatters {
@@ -22,12 +23,12 @@ class Formatters {
       return NumberFormat.currency(
         locale: 'id_ID',
         symbol: 'Rp ',
-        decimalDigits: 0,
+        decimalDigits: 3,
       );
     } catch (_) {
       return NumberFormat.currency(
         symbol: 'Rp ',
-        decimalDigits: 0,
+        decimalDigits: 3,
       );
     }
   }
@@ -48,14 +49,98 @@ class Formatters {
     }
   }
 
+  /// Formats a number as Indonesian Rupiah with 3 decimal digits.
+  /// Example: 12345.678 → "Rp 12.345,678"
+  /// If the fractional part is all zeros, still shows 3 digits: "Rp 12.345,000"
   static String currency(dynamic amount) {
-    if (amount == null) return 'Rp 0';
+    if (amount == null) return 'Rp 0,000';
     if (amount is String) {
-      final parsed = num.tryParse(amount);
-      if (parsed == null) return 'Rp 0';
+      final parsed = parseRupiah(amount);
+      if (parsed == null) return 'Rp 0,000';
       return _currencyFormat.format(parsed);
     }
     return _currencyFormat.format(amount);
+  }
+
+  /// Formats a number for display in a Rupiah input field.
+  /// Uses dot as thousands separator and comma as decimal separator.
+  /// Always shows 3 decimal digits.
+  /// Example: 12345.678 → "12.345,678"
+  static String rupiahInput(num amount) {
+    if (amount == 0) return '';
+    try {
+      // Use id_ID locale: dot for thousands, comma for decimals
+      final fmt = NumberFormat('#,##0.###', 'id_ID');
+      return fmt.format(amount);
+    } catch (_) {
+      // Manual fallback
+      return _manualRupiahFormat(amount);
+    }
+  }
+
+  /// Manual fallback for formatting Rupiah input
+  static String _manualRupiahFormat(num amount) {
+    final isNegative = amount < 0;
+    final absVal = amount.abs();
+
+    final intPart = absVal.truncate();
+    final fracPart = absVal - intPart;
+
+    // Format integer part with dots as thousands separator
+    final intStr = intPart.toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '.',
+        );
+
+    // Format fractional part (up to 3 digits, trim trailing zeros)
+    String fracStr = '';
+    if (fracPart > 0) {
+      // Round to 3 decimal places to avoid floating point artifacts
+      final rounded = (fracPart * 1000).round();
+      if (rounded > 0) {
+        fracStr = ',${'$rounded'.padLeft(3, '0')}';
+        // Trim trailing zeros
+        fracStr = fracStr.replaceAll(RegExp(r'0+$'), '');
+        if (fracStr == ',') fracStr = '';
+      }
+    }
+
+    return '${isNegative ? '-' : ''}$intStr$fracStr';
+  }
+
+  /// Parses a Rupiah-formatted string back to a double value.
+  /// Handles Indonesian format: dot as thousands separator, comma as decimal.
+  /// Examples:
+  ///   "12.345,678" → 12345.678
+  ///   "12.345"     → 12345.0 (dots are thousands separators)
+  ///   "12345.678"  → 12345.678 (if dot is clearly decimal)
+  static double? parseRupiah(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return null;
+    final cleaned = raw.replaceAll(RegExp(r'[^0-9,.\\-]'), '');
+    if (cleaned.isEmpty || cleaned == '-') return null;
+
+    // Indonesian format: dot = thousands, comma = decimal
+    if (cleaned.contains(',')) {
+      // "12.345,678" → remove dots, replace comma with period
+      return double.tryParse(cleaned.replaceAll('.', '').replaceAll(',', '.'));
+    }
+
+    // No comma: check if dots are used as thousands separators
+    // Pattern like "12.345" or "1.234.567" = grouped thousands
+    final isDotGrouped = RegExp(r'^-?\d{1,3}(\.\d{3})+$').hasMatch(cleaned);
+    if (isDotGrouped) {
+      return double.tryParse(cleaned.replaceAll('.', ''));
+    }
+
+    // Otherwise treat dot as decimal: "12345.678"
+    return double.tryParse(cleaned);
+  }
+
+  static double? parseDecimal(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return null;
+    return double.tryParse(raw.replaceAll(',', '.'));
   }
 
   static String date(dynamic dateStr) {
@@ -143,7 +228,68 @@ class Formatters {
     try {
       return _currencyFormat.format(amount);
     } catch (_) {
-      return 'Rp ${amount.toStringAsFixed(0)}';
+      return 'Rp ${amount.toStringAsFixed(3)}';
     }
+  }
+}
+
+/// Input formatter for Rupiah fields that preserves decimal fractions.
+/// Allows digits, one comma (as decimal separator), and formats thousands
+/// with dots. Example input flow: "12345,678" → "12.345,678"
+class RupiahInputFormatter extends TextInputFormatter {
+  const RupiahInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Allow only digits and one comma (for decimal separator)
+    String text = newValue.text;
+
+    // Strip everything except digits and comma
+    text = text.replaceAll(RegExp(r'[^0-9,]'), '');
+
+    if (text.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    // Ensure at most one comma
+    final commaCount = ','.allMatches(text).length;
+    if (commaCount > 1) {
+      // Keep only the first comma
+      final firstComma = text.indexOf(',');
+      text = text.substring(0, firstComma + 1) +
+          text.substring(firstComma + 1).replaceAll(',', '');
+    }
+
+    // Split into integer and decimal parts
+    final parts = text.split(',');
+    String intPart = parts[0];
+    String? decPart = parts.length > 1 ? parts[1] : null;
+
+    // Remove leading zeros from integer part (but keep at least one digit)
+    intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+    if (intPart.isEmpty) intPart = '0';
+
+    // Limit decimal part to 3 digits max
+    if (decPart != null && decPart.length > 3) {
+      decPart = decPart.substring(0, 3);
+    }
+
+    // Format integer part with dot as thousands separator
+    intPart = intPart.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '.',
+    );
+
+    // Reconstruct
+    final formatted =
+        decPart != null ? '$intPart,$decPart' : intPart;
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
 }

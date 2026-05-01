@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (ctx, auth, themeProv, _) => MaterialApp(
-          title: 'Sales Hibiscus',
+          title: 'JURNAL HE M.B.K',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

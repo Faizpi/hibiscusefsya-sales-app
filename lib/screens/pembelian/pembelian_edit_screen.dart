@@ -571,22 +571,33 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
                                 child: TextFormField(
                                     key: ValueKey(
                                         'harga-$i-${item.produk?.id ?? item.produkId}-${item.harga}'),
-                                    initialValue: item.harga.toString(),
+                                    initialValue:
+                                        Formatters.rupiahInput(item.harga),
                                     decoration: const InputDecoration(
                                         labelText: 'Harga', isDense: true),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    inputFormatters: const [
+                                      RupiahInputFormatter(),
+                                    ],
                                     onChanged: (v) => setState(() =>
-                                        item.harga = double.tryParse(v) ?? 0))),
+                                        item.harga =
+                                            Formatters.parseRupiah(v) ?? 0))),
                             const SizedBox(width: 8),
                             Expanded(
                                 flex: 1,
                                 child: TextFormField(
-                                    initialValue: item.diskon.toString(),
+                                    initialValue: item.diskon > 0
+                                        ? item.diskon.toString()
+                                        : '0',
                                     decoration: const InputDecoration(
                                         labelText: 'Disc%', isDense: true),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     onChanged: (v) => setState(() => item
-                                        .diskon = double.tryParse(v) ?? 0))),
+                                        .diskon = Formatters.parseDecimal(v) ?? 0))),
                           ]),
                           const SizedBox(height: 8),
                           Align(
@@ -626,20 +637,30 @@ class _PembelianEditScreenState extends State<PembelianEditScreen> {
                       ]),
                   const SizedBox(height: 8),
                   TextFormField(
-                      initialValue: _diskonAkhir.toString(),
+                      key: ValueKey('diskonAkhir-$_diskonAkhir'),
+                      initialValue:
+                          Formatters.rupiahInput(_diskonAkhir),
                       decoration: const InputDecoration(
                           labelText: 'Diskon Akhir (Rp)', isDense: true),
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
+                              decimal: true),
+                      inputFormatters: const [RupiahInputFormatter()],
                       onChanged: (v) => setState(
-                          () => _diskonAkhir = double.tryParse(v) ?? 0)),
+                          () => _diskonAkhir = Formatters.parseRupiah(v) ?? 0)),
                   const SizedBox(height: 8),
                   TextFormField(
-                      initialValue: _taxPercentage.toString(),
+                      key: ValueKey('tax-$_taxPercentage'),
+                      initialValue: _taxPercentage > 0
+                          ? _taxPercentage.toString()
+                          : '0',
                       decoration: const InputDecoration(
                           labelText: 'Pajak (%)', isDense: true),
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
+                              decimal: true),
                       onChanged: (v) => setState(
-                          () => _taxPercentage = double.tryParse(v) ?? 0)),
+                          () => _taxPercentage = Formatters.parseDecimal(v) ?? 0)),
                   const SizedBox(height: 8),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

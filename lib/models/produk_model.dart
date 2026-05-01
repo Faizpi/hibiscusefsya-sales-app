@@ -71,7 +71,18 @@ class ProdukModel {
   static num? _parseNum(dynamic value) {
     if (value == null) return null;
     if (value is num) return value;
-    if (value is String) return num.tryParse(value);
+    if (value is String) {
+      final cleaned = value.trim().replaceAll(RegExp(r'[^0-9,.\-]'), '');
+      if (cleaned.isEmpty || cleaned == '-') return null;
+      if (cleaned.contains(',')) {
+        return num.tryParse(cleaned.replaceAll('.', '').replaceAll(',', '.'));
+      }
+      final isDotGrouped = RegExp(r'^-?\d{1,3}(\.\d{3})+$').hasMatch(cleaned);
+      if (isDotGrouped) {
+        return num.tryParse(cleaned.replaceAll('.', ''));
+      }
+      return num.tryParse(cleaned);
+    }
     return null;
   }
 }

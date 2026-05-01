@@ -383,12 +383,21 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
                                   labelText: 'Deskripsi', isDense: true)),
                           const SizedBox(height: 8),
                           TextFormField(
-                            initialValue: _items[i].jumlah.toString(),
+                            key: ValueKey(
+                                'jumlah-$i-${_items[i].jumlah}'),
+                            initialValue:
+                                Formatters.rupiahInput(_items[i].jumlah),
                             decoration: const InputDecoration(
                                 labelText: 'Jumlah (Rp)', isDense: true),
-                            keyboardType: TextInputType.number,
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                                    decimal: true),
+                            inputFormatters: const [
+                              RupiahInputFormatter(),
+                            ],
                             onChanged: (v) => setState(() =>
-                                _items[i].jumlah = double.tryParse(v) ?? 0),
+                                _items[i].jumlah =
+                                    Formatters.parseRupiah(v) ?? 0),
                           ),
                         ]),
                       ),
@@ -417,13 +426,15 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
                                 textAlign: TextAlign.end)),
                       ]),
                   const SizedBox(height: 8),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                        labelText: 'Pajak (%)', isDense: true),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => setState(
-                        () => _taxPercentage = double.tryParse(v) ?? 0),
-                  ),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'Pajak (%)', isDense: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
+                              decimal: true),
+                      onChanged: (v) => setState(
+                          () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
+                    ),
                   const SizedBox(height: 8),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

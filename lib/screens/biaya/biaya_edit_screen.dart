@@ -422,12 +422,21 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
                                   labelText: 'Deskripsi', isDense: true)),
                           const SizedBox(height: 8),
                           TextFormField(
-                            initialValue: _items[i].jumlah.toString(),
+                            key: ValueKey(
+                                'jumlah-$i-${_items[i].jumlah}'),
+                            initialValue:
+                                Formatters.rupiahInput(_items[i].jumlah),
                             decoration: const InputDecoration(
                                 labelText: 'Jumlah (Rp)', isDense: true),
-                            keyboardType: TextInputType.number,
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                                    decimal: true),
+                            inputFormatters: const [
+                              RupiahInputFormatter(),
+                            ],
                             onChanged: (v) => setState(() =>
-                                _items[i].jumlah = double.tryParse(v) ?? 0),
+                                _items[i].jumlah =
+                                    Formatters.parseRupiah(v) ?? 0),
                           ),
                         ]),
                       ),
@@ -453,12 +462,17 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
                       ]),
                   const SizedBox(height: 8),
                   TextFormField(
-                    initialValue: _taxPercentage.toString(),
+                    key: ValueKey('tax-$_taxPercentage'),
+                    initialValue: _taxPercentage > 0
+                        ? _taxPercentage.toString()
+                        : '0',
                     decoration: const InputDecoration(
                         labelText: 'Pajak (%)', isDense: true),
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(
+                            decimal: true),
                     onChanged: (v) => setState(
-                        () => _taxPercentage = double.tryParse(v) ?? 0),
+                        () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
                   ),
                   const SizedBox(height: 8),
                   Row(
