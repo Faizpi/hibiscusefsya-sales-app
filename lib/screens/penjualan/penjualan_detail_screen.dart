@@ -203,8 +203,7 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                   ),
                   const Divider(height: 24),
                   _InfoRow('Pelanggan', d.pelanggan ?? '-'),
-                  if (d.noTelepon != null && d.noTelepon!.isNotEmpty)
-                    _InfoRow('No. Telepon', d.noTelepon!),
+                  _InfoRow('No. Telepon', (d.noTelepon != null && d.noTelepon!.isNotEmpty) ? d.noTelepon! : 'N/A'),
                   if (d.alamatPenagihan != null &&
                       d.alamatPenagihan!.isNotEmpty)
                     _InfoRow('Alamat Penagihan', d.alamatPenagihan!),
@@ -215,8 +214,7 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                     _InfoRow('Tipe Harga', d.tipeHarga!),
                   _InfoRow('Gudang', d.gudangName),
                   _InfoRow('Sales', d.userName),
-                  if (d.userNoTelp.isNotEmpty)
-                    _InfoRow('No. Telp Sales', d.userNoTelp),
+                  _InfoRow('No. Telp Sales', d.userNoTelp.isNotEmpty ? d.userNoTelp : 'N/A'),
                   if (d.noReferensi != null && d.noReferensi!.isNotEmpty)
                     _InfoRow('No. Referensi', d.noReferensi!),
                   if (d.tag != null && d.tag!.isNotEmpty) _InfoRow('Tag', d.tag!),

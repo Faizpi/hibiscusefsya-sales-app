@@ -34,6 +34,9 @@ dependencies:
   barcode_widget: ^2.0.3
   mobile_scanner: ^5.1.1
   shimmer: ^3.0.0
+  pdf: ^3.11.0
+  printing: ^5.13.0
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:

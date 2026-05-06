@@ -8,6 +8,12 @@ import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -307,10 +313,27 @@ class DetailPrintActionsHelper {
 
       final response = await service.getBluetoothData(type: type, id: id);
       final data = _unwrapData(response);
+
+      // Ambil invoice URL untuk tombol WhatsApp
+      String? invoiceUrl;
+      try {
+        final qrResponse = await service.getQrData(type: type, id: id);
+        final qrData = _unwrapData(qrResponse);
+        invoiceUrl = _findString(qrData, 'invoice_url') ??
+            _findString(qrData, 'public_url') ??
+            _findString(qrData, 'url') ??
+            _findString(qrResponse, 'invoice_url') ??
+            _findString(qrResponse, 'public_url');
+      } catch (_) {
+        // Tidak wajib, lanjut print tanpa WhatsApp URL
+      }
+
       final printData = {
         ...data,
         'type': type,
         'paper_size': paperSize, // '58mm' atau '80mm'
+        if (invoiceUrl != null && invoiceUrl.isNotEmpty)
+          '_invoice_url': invoiceUrl,
       };
 
       if (!context.mounted) return;
@@ -412,34 +435,35 @@ class DetailPrintActionsHelper {
     final title = _receiptTitle(data);
     final paperSizeKey = _stringValue(data['paper_size']);
     final is80mm = paperSizeKey == '80mm';
-    // Preview width: 80mm ≈ 380px, 58mm ≈ 300px
-    final paperWidth = is80mm ? 380.0 : 300.0;
+    // Preview width: 80mm ≈ 380px, 58mm ~ narrower
+    // For 58mm use dynamic width to match screen
     final lines = _buildReceiptLines(data);
 
     // Build preview line widgets – mirrors ESC/POS layout visually
     final previewWidgets = <Widget>[];
 
-    const mono = TextStyle(
+    final double fontSize = is80mm ? 11.5 : 10.0;
+    final mono = TextStyle(
       fontFamily: 'RobotoMono',
-      fontSize: 11.5,
-      color: Color(0xFF1A1A1A),
+      fontSize: fontSize,
+      color: const Color(0xFF1A1A1A),
       height: 1.45,
-      letterSpacing: 0.2,
+      letterSpacing: 0.1,
     );
-    const monoCenter = TextStyle(
+    final monoCenter = TextStyle(
       fontFamily: 'RobotoMono',
-      fontSize: 11.5,
-      color: Color(0xFF1A1A1A),
+      fontSize: fontSize,
+      color: const Color(0xFF1A1A1A),
       height: 1.45,
-      letterSpacing: 0.2,
+      letterSpacing: 0.1,
     );
     const monoBigBold = TextStyle(
       fontFamily: 'RobotoMono',
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: FontWeight.w800,
       color: Color(0xFF1A1A1A),
       height: 1.3,
-      letterSpacing: 0.5,
+      letterSpacing: 0.4,
     );
     previewWidgets.add(
       Text('HIBISCUS EFSYA', style: monoBigBold, textAlign: TextAlign.center),
@@ -511,6 +535,11 @@ class DetailPrintActionsHelper {
       ),
     );
     previewWidgets.add(const SizedBox(height: 6));
+    // Garis putus-putus pemisah sebelum QR
+    previewWidgets.add(
+      Text('- ' * 20, style: mono.copyWith(color: const Color(0xFF999999)), maxLines: 1, overflow: TextOverflow.clip, textAlign: TextAlign.center),
+    );
+    previewWidgets.add(const SizedBox(height: 6));
     // QR Code website pelanggan
     previewWidgets.add(
       Center(
@@ -526,7 +555,12 @@ class DetailPrintActionsHelper {
     previewWidgets.add(
       Text('customer.hibiscusefsya.com', style: monoCenter.copyWith(fontSize: 10, color: const Color(0xFF555555)), textAlign: TextAlign.center),
     );
-    previewWidgets.add(const SizedBox(height: 8));
+    previewWidgets.add(const SizedBox(height: 4));
+    // Garis putus-putus pemisah setelah QR
+    previewWidgets.add(
+      Text('- ' * 20, style: mono.copyWith(color: const Color(0xFF999999)), maxLines: 1, overflow: TextOverflow.clip, textAlign: TextAlign.center),
+    );
+    previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
       Text('marketing@hibiscusefsya.com', style: monoCenter, textAlign: TextAlign.center),
     );
@@ -613,61 +647,115 @@ class DetailPrintActionsHelper {
                             child: SingleChildScrollView(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Center(
-                                child: Container(
-                                  width: paperWidth,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(20),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
+                                child: LayoutBuilder(
+                                  builder: (lbCtx, constraints) {
+                                    final maxPaperWidth = is80mm ? 380.0 : 276.0;
+                                    final paperWidth = maxPaperWidth.clamp(0.0, constraints.maxWidth - 16);
+                                    return Container(
+                                      width: paperWidth,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withAlpha(20),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    // Torn-paper top edge
-                                    children: [
-                                      // Top jagged edge simulation
-                                      CustomPaint(
-                                        size: const Size(double.infinity, 10),
-                                        painter: _TornEdgePainter(isTop: true),
+                                      child: Column(
+                                        // Torn-paper top edge
+                                        children: [
+                                          // Top jagged edge simulation
+                                          CustomPaint(
+                                            size: const Size(double.infinity, 10),
+                                            painter: _TornEdgePainter(isTop: true),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: is80mm ? 12 : 8, vertical: 8),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                                              children: previewWidgets,
+                                            ),
+                                          ),
+                                          // Bottom jagged edge
+                                          CustomPaint(
+                                            size: const Size(double.infinity, 10),
+                                            painter: _TornEdgePainter(isTop: false),
+                                          ),
+                                        ],
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                                          children: previewWidgets,
-                                        ),
-                                      ),
-                                      // Bottom jagged edge
-                                      CustomPaint(
-                                        size: const Size(double.infinity, 10),
-                                        painter: _TornEdgePainter(isTop: false),
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
                           ),
-                          // Action button
+                          // Action buttons
                           Container(height: 1, color: const Color(0xFFE0E0E0)),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                icon: const Icon(Icons.print_outlined),
-                                label: const Text('Pilih Printer Bluetooth'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  icon: const Icon(Icons.print_outlined),
+                                  label: const Text('Pilih Printer Bluetooth'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                Builder(builder: (btnCtx) {
+                                  final noTelepon = _stringValue(data['no_telepon']);
+                                  if (noTelepon.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Column(
+                                    children: [
+                                      const SizedBox(height: 10),
+                                      // Tombol WhatsApp dengan logo official
+                                      Material(
+                                        color: const Color(0xFF25D366),
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(12),
+                                          onTap: () async {
+                                            Navigator.pop(ctx, false);
+                                            await _shareInvoiceViaWhatsApp(context, data);
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const FaIcon(
+                                                  FontAwesomeIcons.whatsapp,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                const Text(
+                                                  'Kirim Invoice ke WhatsApp',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    letterSpacing: 0.2,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                              ],
                             ),
                           ),
                         ],
@@ -853,10 +941,23 @@ class DetailPrintActionsHelper {
       styles: const PosStyles(align: PosAlign.center, bold: true),
     ));
     bytes.addAll(generator.feed(1));
+    // Garis putus-putus pemisah sebelum QR
+    final dashLine = '- ' * (is80mm ? 24 : 16);
+    bytes.addAll(generator.text(
+      dashLine,
+      styles: const PosStyles(align: PosAlign.center),
+    ));
+    bytes.addAll(generator.feed(1));
     // QR Code website pelanggan
     bytes.addAll(generator.qrcode(
       'https://customer.hibiscusefsya.com/',
       size: QRSize.size4,
+    ));
+    bytes.addAll(generator.feed(1));
+    // Garis putus-putus pemisah setelah QR
+    bytes.addAll(generator.text(
+      dashLine,
+      styles: const PosStyles(align: PosAlign.center),
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
@@ -907,16 +1008,12 @@ class DetailPrintActionsHelper {
       _kvLine('Jatuh Tempo', _stringValue(data['jatuh_tempo'])),
       _kvLine('Pembayaran', _stringValue(data['pembayaran'])),
       _kvLine('Pelanggan', _stringValue(data['pelanggan'])),
-    ]);
-    if (_stringValue(data['no_telepon']).isNotEmpty) {
-      lines.add(_kvLine('No. Telepon', _stringValue(data['no_telepon'])));
-    }
-    lines.addAll([
+      // Selalu tampilkan No. Telepon, N/A jika kosong
+      _kvLine('No. Telepon', _stringValue(data['no_telepon']).isNotEmpty ? _stringValue(data['no_telepon']) : 'N/A'),
       _kvLine('Sales', _stringValue(data['sales'])),
+      // Selalu tampilkan No. Telp Sales, N/A jika kosong
+      _kvLine('No. Telp Sales', _stringValue(data['sales_no_telp']).isNotEmpty ? _stringValue(data['sales_no_telp']) : 'N/A'),
     ]);
-    if (_stringValue(data['sales_no_telp']).isNotEmpty) {
-      lines.add(_kvLine('No. Telp Sales', _stringValue(data['sales_no_telp'])));
-    }
     if (_stringValue(data['no_referensi']).isNotEmpty) {
       lines.add(_kvLine('No. Ref', _stringValue(data['no_referensi'])));
     }
@@ -1479,6 +1576,194 @@ class DetailPrintActionsHelper {
       ),
     );
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // WhatsApp PDF Share
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Generate PDF struk persis seperti preview dan share via WhatsApp
+  static Future<void> _shareInvoiceViaWhatsApp(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      _snack(context, 'Menyiapkan PDF invoice...');
+
+      final pdfBytes = await _generateReceiptPdf(data);
+
+      // Simpan ke file temp
+      final dir = await getTemporaryDirectory();
+      final nomor = _stringValue(data['nomor']).replaceAll(RegExp(r'[/\\:*?"<>|]'), '-');
+      final fileName = 'Invoice-$nomor.pdf';
+      final file = io.File('${dir.path}/$fileName');
+      await file.writeAsBytes(pdfBytes);
+
+      // Normalisasi nomor telepon
+      final noTelepon = _stringValue(data['no_telepon']);
+      String phone = noTelepon.replaceAll(RegExp(r'[^\d]'), '');
+      if (phone.startsWith('0')) phone = '62${phone.substring(1)}';
+      if (!phone.startsWith('62')) phone = '62$phone';
+
+      final pelanggan = _stringValue(data['pelanggan']);
+      final grandTotal = _currency(_numValue(data['grand_total']));
+      final nomorInvoice = _stringValue(data['nomor']);
+
+      final message =
+          'Halo $pelanggan,\n\n'
+          'Berikut adalah invoice atas transaksi Anda:\n'
+          'No. Invoice : $nomorInvoice\n'
+          'Total       : $grandTotal\n\n'
+          'Silakan buka file PDF terlampir untuk melihat detail invoice.\n\n'
+          'Terima kasih telah berbelanja di Hibiscus Efsya.';
+
+      // Share file PDF — WhatsApp akan muncul sebagai opsi share
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/pdf')],
+        text: message,
+        subject: 'Invoice $nomorInvoice - Hibiscus Efsya',
+      );
+    } catch (e) {
+      _snack(context, 'Gagal menyiapkan PDF: $e', isError: true);
+    }
+  }
+
+  /// Build PDF yang tampilannya persis seperti preview struk bluetooth
+  static Future<List<int>> _generateReceiptPdf(Map<String, dynamic> data) async {
+    final pdf = pw.Document();
+    final is80mm = _stringValue(data['paper_size']) == '80mm';
+
+    // Lebar kertas dalam PDF points: 58mm = 164pt, 80mm = 227pt
+    final pageWidth = is80mm ? 227.0 : 164.0;
+    final lines = _buildReceiptLines(data);
+    final title = _receiptTitle(data);
+
+    // Load font monospace dari Google Fonts via printing package
+    final ttf = await PdfGoogleFonts.robotoMonoRegular();
+    final ttfBold = await PdfGoogleFonts.robotoMonoBold();
+
+    const double fz = 7.0;      // font size normal
+    const double fzBig = 10.0;  // font size header
+    const double lineH = 1.45;
+
+    pw.TextStyle monoStyle() => pw.TextStyle(font: ttf, fontSize: fz, lineSpacing: fz * (lineH - 1));
+    pw.TextStyle monoStyleBold() => pw.TextStyle(font: ttfBold, fontSize: fz, lineSpacing: fz * (lineH - 1));
+    pw.TextStyle monoStyleHeader() => pw.TextStyle(font: ttfBold, fontSize: fzBig);
+
+    final List<pw.Widget> contentWidgets = [];
+
+    // ── HEADER ─────────────────────────────────────────────────────────────────
+    contentWidgets.add(
+      pw.Center(child: pw.Text('HIBISCUS EFSYA', style: monoStyleHeader())),
+    );
+    if (title.isNotEmpty) {
+      contentWidgets.add(pw.SizedBox(height: 2));
+      contentWidgets.add(
+        pw.Center(child: pw.Text(title, style: monoStyleBold())),
+      );
+    }
+    contentWidgets.add(pw.SizedBox(height: 4));
+    contentWidgets.add(pw.Divider(color: PdfColors.black, thickness: 0.5));
+    contentWidgets.add(pw.SizedBox(height: 2));
+
+    // ── BODY LINES ─────────────────────────────────────────────────────────────
+    for (final line in lines) {
+      if (line == null) {
+        contentWidgets.add(pw.SizedBox(height: 3));
+      } else if (line == '---HR---') {
+        contentWidgets.add(pw.SizedBox(height: 2));
+        contentWidgets.add(pw.Divider(color: PdfColors.black, thickness: 0.5));
+        contentWidgets.add(pw.SizedBox(height: 2));
+      } else if (line.startsWith('\x00R:')) {
+        contentWidgets.add(
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Text(line.substring(3), style: monoStyle()),
+          ),
+        );
+      } else {
+        // Cek apakah baris two-column (ada 2+ spasi di tengah)
+        final match = RegExp(r'^(.+?)\s{2,}(.+)$').firstMatch(line);
+        if (match != null) {
+          contentWidgets.add(
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(match.group(1)!, style: monoStyle()),
+                pw.Text(match.group(2)!, style: monoStyle()),
+              ],
+            ),
+          );
+        } else {
+          contentWidgets.add(pw.Text(line, style: monoStyle()));
+        }
+      }
+    }
+
+    // ── FOOTER ─────────────────────────────────────────────────────────────────
+    contentWidgets.add(pw.SizedBox(height: 2));
+    contentWidgets.add(pw.Divider(color: PdfColors.black, thickness: 0.5));
+    contentWidgets.add(pw.SizedBox(height: 4));
+    contentWidgets.add(
+      pw.Center(
+        child: pw.Text(
+          'Periksa Invoice & Ambil Promo !!!',
+          style: monoStyleBold(),
+        ),
+      ),
+    );
+    contentWidgets.add(pw.SizedBox(height: 3));
+    // Dash sebelum QR
+    contentWidgets.add(
+      pw.Center(child: pw.Text('- ' * 18, style: pw.TextStyle(font: ttf, fontSize: 5, color: PdfColors.grey600))),
+    );
+    contentWidgets.add(pw.SizedBox(height: 4));
+    // QR Code
+    contentWidgets.add(
+      pw.Center(
+        child: pw.BarcodeWidget(
+          barcode: pw.Barcode.qrCode(),
+          data: 'https://customer.hibiscusefsya.com/',
+          width: is80mm ? 60 : 50,
+          height: is80mm ? 60 : 50,
+        ),
+      ),
+    );
+    contentWidgets.add(pw.SizedBox(height: 3));
+    contentWidgets.add(
+      pw.Center(child: pw.Text('customer.hibiscusefsya.com', style: pw.TextStyle(font: ttf, fontSize: 5.5, color: PdfColors.grey700))),
+    );
+    contentWidgets.add(pw.SizedBox(height: 2));
+    // Dash setelah QR
+    contentWidgets.add(
+      pw.Center(child: pw.Text('- ' * 18, style: pw.TextStyle(font: ttf, fontSize: 5, color: PdfColors.grey600))),
+    );
+    contentWidgets.add(pw.SizedBox(height: 4));
+    contentWidgets.add(
+      pw.Center(child: pw.Text('marketing@hibiscusefsya.com', style: monoStyle())),
+    );
+    contentWidgets.add(pw.SizedBox(height: 2));
+    contentWidgets.add(
+      pw.Center(child: pw.Text('Official WA Chat: +6285195550202', style: monoStyle())),
+    );
+    contentWidgets.add(pw.SizedBox(height: 4));
+    contentWidgets.add(
+      pw.Center(child: pw.Text('Terima kasih', style: monoStyleBold())),
+    );
+    contentWidgets.add(pw.SizedBox(height: 8));
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(pageWidth, double.infinity, marginAll: 8),
+        build: (pw.Context ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: contentWidgets,
+        ),
+      ),
+    );
+
+    return pdf.save();
+  }
 }
 
 /// Paints a simple zigzag torn-paper edge at the top or bottom of a receipt.
@@ -1582,3 +1867,4 @@ class _PaperSizeOption extends StatelessWidget {
     );
   }
 }
+
