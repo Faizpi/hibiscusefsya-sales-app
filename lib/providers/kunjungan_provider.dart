@@ -19,7 +19,8 @@ class KunjunganProvider with ChangeNotifier {
     _token = token;
   }
 
-  Future<void> fetchKunjungan({String? status, bool refresh = false}) async {
+  Future<void> fetchKunjungan(
+      {String? status, String? search, bool refresh = false}) async {
     if (_token == null) return;
     if (refresh) {
       _currentPage = 1;
@@ -33,6 +34,9 @@ class KunjunganProvider with ChangeNotifier {
       final api = ApiService(token: _token);
       final params = <String, String>{'page': _currentPage.toString()};
       if (status != null) params['status'] = status;
+      if (search != null && search.trim().isNotEmpty) {
+        params['search'] = search.trim();
+      }
 
       final response = await api.get('kunjungan', params: params);
       final List data = response['data'] ?? [];
@@ -52,10 +56,10 @@ class KunjunganProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMore({String? status}) async {
+  Future<void> loadMore({String? status, String? search}) async {
     if (!hasMore || _isLoading) return;
     _currentPage++;
-    await fetchKunjungan(status: status);
+    await fetchKunjungan(status: status, search: search);
   }
 
   Future<KunjunganModel> getDetail(int id) async {

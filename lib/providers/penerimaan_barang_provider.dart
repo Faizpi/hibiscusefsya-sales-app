@@ -19,7 +19,8 @@ class PenerimaanBarangProvider with ChangeNotifier {
     _token = token;
   }
 
-  Future<void> fetchPenerimaan({String? status, bool refresh = false}) async {
+  Future<void> fetchPenerimaan(
+      {String? status, String? search, bool refresh = false}) async {
     if (_token == null) return;
     if (refresh) {
       _currentPage = 1;
@@ -33,6 +34,9 @@ class PenerimaanBarangProvider with ChangeNotifier {
       final api = ApiService(token: _token);
       final params = <String, String>{'page': _currentPage.toString()};
       if (status != null) params['status'] = status;
+      if (search != null && search.trim().isNotEmpty) {
+        params['search'] = search.trim();
+      }
 
       final response = await api.get('penerimaan-barang', params: params);
       final List data = response['data'] ?? [];
@@ -53,10 +57,10 @@ class PenerimaanBarangProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMore({String? status}) async {
+  Future<void> loadMore({String? status, String? search}) async {
     if (!hasMore || _isLoading) return;
     _currentPage++;
-    await fetchPenerimaan(status: status);
+    await fetchPenerimaan(status: status, search: search);
   }
 
   Future<PenerimaanBarangModel> getDetail(int id) async {

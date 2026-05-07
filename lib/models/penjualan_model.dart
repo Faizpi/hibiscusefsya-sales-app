@@ -70,7 +70,7 @@ class PenjualanModel {
       nomor: json['nomor'],
       uuid: json['uuid'],
       pelanggan: json['pelanggan'],
-      noTelepon: json['no_telepon'],
+      noTelepon: _extractNoTelepon(json),
       alamatPenagihan: json['alamat_penagihan'],
       tglTransaksi: json['tgl_transaksi'],
       tglJatuhTempo: json['tgl_jatuh_tempo'],
@@ -135,8 +135,75 @@ class PenjualanModel {
     return null;
   }
 
+  static String? _parseString(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return null;
+    return text;
+  }
+
+  static String? _extractNoTelepon(Map<String, dynamic> json) {
+    const directPhoneKeys = [
+      'no_telepon',
+      'no_telp',
+      'telepon',
+      'phone',
+      'kontak_no_telepon',
+      'kontak_no_telp',
+      'pelanggan_no_telepon',
+      'pelanggan_no_telp',
+    ];
+
+    for (final key in directPhoneKeys) {
+      final parsed = _parseString(json[key]);
+      if (parsed != null) return parsed;
+    }
+
+    for (final entry in json.entries) {
+      final key = entry.key.toLowerCase();
+      if (key.contains('sales') || key.contains('user')) continue;
+      if (key.contains('telp') ||
+          key.contains('telepon') ||
+          key.contains('phone') ||
+          key.contains('whatsapp') ||
+          key == 'wa') {
+        final parsed = _parseString(entry.value);
+        if (parsed != null) return parsed;
+      }
+    }
+
+    final kontakRaw = json['kontak'];
+    if (kontakRaw is Map) {
+      const nestedPhoneKeys = ['no_telepon', 'no_telp', 'telepon', 'phone'];
+      for (final key in nestedPhoneKeys) {
+        final parsed = _parseString(kontakRaw[key]);
+        if (parsed != null) return parsed;
+      }
+
+      for (final entry in kontakRaw.entries) {
+        final key = entry.key.toString().toLowerCase();
+        if (key.contains('sales') || key.contains('user')) continue;
+        if (key.contains('telp') ||
+            key.contains('telepon') ||
+            key.contains('phone') ||
+            key.contains('whatsapp') ||
+            key == 'wa') {
+          final parsed = _parseString(entry.value);
+          if (parsed != null) return parsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
   String get userName => user?['name'] ?? '-';
-  String get userNoTelp => user?['no_telp'] ?? '';
+  String get userNoTelp {
+    final raw = user?['no_telp'] ?? user?['no_telepon'] ?? user?['phone'];
+    final parsed = _parseString(raw);
+    return parsed ?? '';
+  }
+
   String get gudangName => gudang?['nama_gudang'] ?? '-';
 }
 

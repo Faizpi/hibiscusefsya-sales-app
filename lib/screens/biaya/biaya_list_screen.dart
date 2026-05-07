@@ -19,6 +19,7 @@ class BiayaListScreen extends StatefulWidget {
 
 class _BiayaListScreenState extends State<BiayaListScreen> {
   String? _selectedStatus;
+  String _searchQuery = '';
   int _displayCount = 20;
   static const int _pageSize = 20;
 
@@ -33,8 +34,8 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
 
   void _loadData() {
     setState(() => _displayCount = _pageSize);
-    Provider.of<BiayaProvider>(context, listen: false)
-        .fetchBiaya(status: _selectedStatus, refresh: true);
+    Provider.of<BiayaProvider>(context, listen: false).fetchBiaya(
+        status: _selectedStatus, search: _searchQuery, refresh: true);
   }
 
   @override
@@ -64,9 +65,47 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
           : null,
       body: Column(
         children: [
-          // Filter chips
+          // Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Cari nomor, jenis, atau penerima...',
+                hintStyle: TextStyle(
+                    color: AppTheme.textTertiaryColor(context), fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: AppTheme.textTertiaryColor(context)),
+                isDense: true,
+                filled: true,
+                fillColor: AppTheme.glassInputFill(context),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryColor, width: 1.5),
+                ),
+              ),
+              style: TextStyle(color: AppTheme.textPrimaryColor(context)),
+              onChanged: (v) {
+                _searchQuery = v;
+                _loadData();
+              },
+            ),
+          ),
+          // Filter chips
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -153,7 +192,8 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
 
                 final visibleItems =
                     provider.items.take(_displayCount).toList();
-                final hasMoreLocal = provider.items.length > _displayCount;
+                final hasMoreLocal =
+                    provider.items.length > _displayCount || provider.hasMore;
 
                 return RefreshIndicator(
                   onRefresh: () async => _loadData(),
@@ -166,8 +206,7 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Center(
                             child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  setState(() => _displayCount += _pageSize),
+                              onPressed: () => _loadMore(provider),
                               icon: const Icon(Icons.expand_more_rounded),
                               label: const Text('Muat Lebih Banyak'),
                               style: OutlinedButton.styleFrom(
@@ -317,5 +356,12 @@ class _BiayaListScreenState extends State<BiayaListScreen> {
         ],
       ),
     );
+  }
+
+  void _loadMore(BiayaProvider provider) {
+    setState(() => _displayCount += _pageSize);
+    if (_displayCount >= provider.items.length && provider.hasMore) {
+      provider.loadMore(status: _selectedStatus, search: _searchQuery);
+    }
   }
 }

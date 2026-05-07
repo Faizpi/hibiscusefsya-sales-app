@@ -19,6 +19,7 @@ class PenerimaanListScreen extends StatefulWidget {
 
 class _PenerimaanListScreenState extends State<PenerimaanListScreen> {
   String? _selectedStatus;
+  String _searchQuery = '';
   int _displayCount = 20;
   static const int _pageSize = 20;
 
@@ -33,7 +34,8 @@ class _PenerimaanListScreenState extends State<PenerimaanListScreen> {
   void _loadData({bool refresh = false}) {
     if (refresh) setState(() => _displayCount = _pageSize);
     Provider.of<PenerimaanBarangProvider>(context, listen: false)
-        .fetchPenerimaan(status: _selectedStatus, refresh: refresh);
+        .fetchPenerimaan(
+            status: _selectedStatus, search: _searchQuery, refresh: refresh);
   }
 
   @override
@@ -63,9 +65,47 @@ class _PenerimaanListScreenState extends State<PenerimaanListScreen> {
           : null,
       body: Column(
         children: [
-          // Filter chips
+          // Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Cari nomor, gudang, atau surat jalan...',
+                hintStyle: TextStyle(
+                    color: AppTheme.textTertiaryColor(context), fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: AppTheme.textTertiaryColor(context)),
+                isDense: true,
+                filled: true,
+                fillColor: AppTheme.glassInputFill(context),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryColor, width: 1.5),
+                ),
+              ),
+              style: TextStyle(color: AppTheme.textPrimaryColor(context)),
+              onChanged: (v) {
+                _searchQuery = v;
+                _loadData(refresh: true);
+              },
+            ),
+          ),
+          // Filter chips
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -324,7 +364,8 @@ class _PenerimaanListScreenState extends State<PenerimaanListScreen> {
                   });
                   if (_displayCount >= provider.items.length &&
                       provider.hasMore) {
-                    provider.loadMore(status: _selectedStatus);
+                    provider.loadMore(
+                        status: _selectedStatus, search: _searchQuery);
                   }
                 },
                 icon: const Icon(Icons.expand_more_rounded),

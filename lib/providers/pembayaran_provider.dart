@@ -19,7 +19,7 @@ class PembayaranProvider with ChangeNotifier {
     _token = token;
   }
 
-  Future<void> fetchPembayaran({bool refresh = false}) async {
+  Future<void> fetchPembayaran({String? search, bool refresh = false}) async {
     if (_token == null) return;
     if (refresh) {
       _currentPage = 1;
@@ -32,6 +32,9 @@ class PembayaranProvider with ChangeNotifier {
     try {
       final api = ApiService(token: _token);
       final params = <String, String>{'page': _currentPage.toString()};
+      if (search != null && search.trim().isNotEmpty) {
+        params['search'] = search.trim();
+      }
       final response = await api.get('pembayaran', params: params);
       final List data = response['data'] ?? [];
       final newItems = data.map((e) => PembayaranModel.fromJson(e)).toList();
@@ -50,10 +53,10 @@ class PembayaranProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMore() async {
+  Future<void> loadMore({String? search}) async {
     if (!hasMore || _isLoading) return;
     _currentPage++;
-    await fetchPembayaran();
+    await fetchPembayaran(search: search);
   }
 
   Future<PembayaranModel> getDetail(int id) async {
@@ -134,6 +137,7 @@ class PembayaranProvider with ChangeNotifier {
 
   Future<List<int>> downloadHarianPdf({required String date}) async {
     final api = ApiService(token: _token);
-    return await api.getBytes('pembayaran/export-harian-pdf', params: {'tanggal': date});
+    return await api
+        .getBytes('pembayaran/export-harian-pdf', params: {'tanggal': date});
   }
 }

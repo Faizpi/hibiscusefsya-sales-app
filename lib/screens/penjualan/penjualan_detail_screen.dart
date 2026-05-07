@@ -4,6 +4,7 @@ import '../../models/penjualan_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/penjualan_provider.dart';
+import '../../services/print_service.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/detail_print_actions_helper.dart';
 import '../../utils/formatters.dart';
@@ -23,6 +24,7 @@ class PenjualanDetailScreen extends StatefulWidget {
 
 class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
   PenjualanModel? _data;
+  String? _customerPhone;
   bool _isLoading = true;
   String? _error;
 
@@ -55,16 +57,93 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _customerPhone = null;
     });
 
     try {
       final provider = Provider.of<PenjualanProvider>(context, listen: false);
       _data = await provider.getDetail(widget.id);
+      _customerPhone = await _resolveCustomerPhone(_data);
     } catch (e) {
       _error = e.toString();
     }
 
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<String> _resolveCustomerPhone(PenjualanModel? data) async {
+    final fromDetail = _normalizePhone(data?.noTelepon);
+    if (fromDetail.isNotEmpty) return fromDetail;
+
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final token = auth.token;
+      if (token == null || token.isEmpty) return '';
+
+      final service = PrintService(token: token);
+      final response =
+          await service.getBluetoothData(type: 'penjualan', id: widget.id);
+      final rawData = response['data'];
+      final map = rawData is Map
+          ? rawData.map((k, v) => MapEntry(k.toString(), v))
+          : response;
+      return _extractPhoneFromMap(map);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _normalizePhone(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty || value.toLowerCase() == 'null' || value == '-') {
+      return '';
+    }
+    return value;
+  }
+
+  String _extractPhoneFromMap(Map<String, dynamic> data) {
+    final directKeys = [
+      'no_telepon',
+      'no_telp',
+      'telepon',
+      'nomor_telepon',
+      'phone',
+      'no_hp',
+      'hp',
+      'kontak_no_telepon',
+      'kontak_no_telp',
+      'pelanggan_no_telepon',
+      'pelanggan_no_telp',
+    ];
+
+    for (final key in directKeys) {
+      final val = _normalizePhone(data[key]?.toString());
+      if (val.isNotEmpty) return val;
+    }
+
+    for (final entry in data.entries) {
+      final key = entry.key.toLowerCase();
+      if (key.contains('sales') || key.contains('user')) continue;
+
+      if (key.contains('telp') ||
+          key.contains('telepon') ||
+          key.contains('phone') ||
+          key.contains('whatsapp') ||
+          key == 'wa') {
+        final value = _normalizePhone(entry.value?.toString());
+        if (value.isNotEmpty) return value;
+      }
+
+      final nested = entry.value;
+      if (nested is Map) {
+        final result = _extractPhoneFromMap(
+          nested.map((k, v) => MapEntry(k.toString(), v)),
+        );
+        if (result.isNotEmpty) return result;
+      }
+    }
+
+    return '';
   }
 
   @override
@@ -98,13 +177,13 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
       if (_data != null && user != null)
         Builder(builder: (ctx) {
           final status = _data!.status;
-          final canApprove =
-              user.hasPermission('can_approve_transaction') && status == 'Pending';
-          final canMarkPaid =
-              user.hasPermission('can_approve_transaction') && status == 'Approved';
+          final canApprove = user.hasPermission('can_approve_transaction') &&
+              status == 'Pending';
+          final canMarkPaid = user.hasPermission('can_approve_transaction') &&
+              status == 'Approved';
           final canCancel = _canCancelForCurrentUser(user, status);
-          final canUncancel =
-              user.hasPermission('can_uncancel_transaction') && status == 'Canceled';
+          final canUncancel = user.hasPermission('can_uncancel_transaction') &&
+              status == 'Canceled';
           final canUnmarkPaid = user.isSuperAdmin && status == 'Lunas';
 
           final menuItems = <PopupMenuEntry<String>>[
@@ -203,7 +282,11 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                   ),
                   const Divider(height: 24),
                   _InfoRow('Pelanggan', d.pelanggan ?? '-'),
-                  _InfoRow('No. Telepon', (d.noTelepon != null && d.noTelepon!.isNotEmpty) ? d.noTelepon! : 'N/A'),
+                  _InfoRow(
+                      'No. Telepon',
+                      (_customerPhone != null && _customerPhone!.isNotEmpty)
+                          ? _customerPhone!
+                          : 'N/A'),
                   if (d.alamatPenagihan != null &&
                       d.alamatPenagihan!.isNotEmpty)
                     _InfoRow('Alamat Penagihan', d.alamatPenagihan!),
@@ -214,13 +297,16 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                     _InfoRow('Tipe Harga', d.tipeHarga!),
                   _InfoRow('Gudang', d.gudangName),
                   _InfoRow('Sales', d.userName),
-                  _InfoRow('No. Telp Sales', d.userNoTelp.isNotEmpty ? d.userNoTelp : 'N/A'),
+                  _InfoRow('No. Telp Sales',
+                      d.userNoTelp.isNotEmpty ? d.userNoTelp : 'N/A'),
                   if (d.noReferensi != null && d.noReferensi!.isNotEmpty)
                     _InfoRow('No. Referensi', d.noReferensi!),
-                  if (d.tag != null && d.tag!.isNotEmpty) _InfoRow('Tag', d.tag!),
+                  if (d.tag != null && d.tag!.isNotEmpty)
+                    _InfoRow('Tag', d.tag!),
                   if (d.koordinat != null && d.koordinat!.isNotEmpty)
                     _InfoRow('Koordinat', d.koordinat!),
-                  if (d.memo != null && d.memo!.isNotEmpty) _InfoRow('Memo', d.memo!),
+                  if (d.memo != null && d.memo!.isNotEmpty)
+                    _InfoRow('Memo', d.memo!),
                 ],
               ),
             ),
@@ -275,7 +361,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                             fontSize: 12,
                           ),
                         ),
-                      if (item.batchNumber != null && item.batchNumber!.isNotEmpty)
+                      if (item.batchNumber != null &&
+                          item.batchNumber!.isNotEmpty)
                         Text(
                           'Batch: ${item.batchNumber}',
                           style: TextStyle(
@@ -283,7 +370,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                             color: AppTheme.textSecondaryColor(context),
                           ),
                         ),
-                      if (item.expiredDate != null && item.expiredDate!.isNotEmpty)
+                      if (item.expiredDate != null &&
+                          item.expiredDate!.isNotEmpty)
                         Text(
                           'Expired: ${Formatters.date(item.expiredDate)}',
                           style: TextStyle(
@@ -311,7 +399,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
               child: Column(
                 children: [
                   if (d.diskonAkhir != null && d.diskonAkhir! > 0)
-                    _TotalRow('Diskon Akhir', '- ${Formatters.currency(d.diskonAkhir)}'),
+                    _TotalRow('Diskon Akhir',
+                        '- ${Formatters.currency(d.diskonAkhir)}'),
                   if (d.taxPercentage != null && d.taxPercentage! > 0)
                     _TotalRow('Pajak (${d.taxPercentage}%)', ''),
                   const Divider(),
@@ -320,7 +409,8 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                     children: [
                       const Text(
                         'Grand Total',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       Flexible(

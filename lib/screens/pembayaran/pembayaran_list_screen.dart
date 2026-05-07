@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/pembayaran_provider.dart';
 import '../../utils/formatters.dart';
@@ -22,6 +21,7 @@ class PembayaranListScreen extends StatefulWidget {
 }
 
 class _PembayaranListScreenState extends State<PembayaranListScreen> {
+  String _searchQuery = '';
   int _displayCount = 20;
   static const int _pageSize = 20;
 
@@ -37,7 +37,7 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
   void _loadData() {
     setState(() => _displayCount = _pageSize);
     Provider.of<PembayaranProvider>(context, listen: false)
-        .fetchPembayaran(refresh: true);
+        .fetchPembayaran(search: _searchQuery, refresh: true);
   }
 
   @override
@@ -58,11 +58,14 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.white.withAlpha(28),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(Icons.picture_as_pdf, size: 18),
-              label: const Text('Export Tagihan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              label: const Text('Export Tagihan',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
               onPressed: () => _showExportPdfDialog(context),
             ),
           ),
@@ -82,7 +85,44 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
           : null,
       body: Column(
         children: [
-          const SizedBox(height: 8),
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Cari nomor atau invoice...',
+                hintStyle: TextStyle(
+                    color: AppTheme.textTertiaryColor(context), fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: AppTheme.textTertiaryColor(context)),
+                isDense: true,
+                filled: true,
+                fillColor: AppTheme.glassInputFill(context),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.glassBorderColor(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryColor, width: 1.5),
+                ),
+              ),
+              style: TextStyle(color: AppTheme.textPrimaryColor(context)),
+              onChanged: (v) {
+                _searchQuery = v;
+                _loadData();
+              },
+            ),
+          ),
           // Summary cards
           Consumer<PembayaranProvider>(
             builder: (ctx, provider, _) {
@@ -133,7 +173,8 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
 
                 final visibleItems =
                     provider.items.take(_displayCount).toList();
-                final hasMoreLocal = provider.items.length > _displayCount;
+                final hasMoreLocal =
+                    provider.items.length > _displayCount || provider.hasMore;
 
                 return RefreshIndicator(
                   onRefresh: () async => _loadData(),
@@ -146,8 +187,7 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Center(
                             child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  setState(() => _displayCount += _pageSize),
+                              onPressed: () => _loadMore(provider),
                               icon: const Icon(Icons.expand_more_rounded),
                               label: const Text('Muat Lebih Banyak'),
                               style: OutlinedButton.styleFrom(
@@ -282,6 +322,13 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
     );
   }
 
+  void _loadMore(PembayaranProvider provider) {
+    setState(() => _displayCount += _pageSize);
+    if (_displayCount >= provider.items.length && provider.hasMore) {
+      provider.loadMore(search: _searchQuery);
+    }
+  }
+
   Future<void> _showExportPdfDialog(BuildContext context) async {
     DateTime? selectedDate = await showDatePicker(
       context: context,
@@ -298,8 +345,9 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
   }
 
   Future<void> _downloadPdf(BuildContext context, DateTime date) async {
-    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    
+    final dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -327,7 +375,8 @@ class _PembayaranListScreenState extends State<PembayaranListScreen> {
       Navigator.pop(context); // close dialog
 
       final dir = await getApplicationSupportDirectory();
-      final fileName = 'Tagihan-Invoice-Harian-${dateStr.replaceAll('-', '')}.pdf';
+      final fileName =
+          'Tagihan-Invoice-Harian-${dateStr.replaceAll('-', '')}.pdf';
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(bytes, flush: true);
 

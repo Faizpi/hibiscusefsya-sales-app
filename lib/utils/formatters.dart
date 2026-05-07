@@ -22,13 +22,13 @@ class Formatters {
     try {
       return NumberFormat.currency(
         locale: 'id_ID',
-        symbol: 'Rp ',
-        decimalDigits: 3,
+        symbol: 'Rp',
+        decimalDigits: 2,
       );
     } catch (_) {
       return NumberFormat.currency(
-        symbol: 'Rp ',
-        decimalDigits: 3,
+        symbol: 'Rp',
+        decimalDigits: 2,
       );
     }
   }
@@ -49,14 +49,15 @@ class Formatters {
     }
   }
 
-  /// Formats a number as Indonesian Rupiah with 3 decimal digits.
+  /// Formats a number as Indonesian Rupiah with 2 decimal digits.
+  /// Correct format example: 50000 -> "Rp50.000,00".
   /// Example: 12345.678 → "Rp 12.345,678"
-  /// If the fractional part is all zeros, still shows 3 digits: "Rp 12.345,000"
+  /// If the fractional part is all zeros, still shows 2 digits: "Rp50.000,00"
   static String currency(dynamic amount) {
-    if (amount == null) return 'Rp 0,000';
+    if (amount == null) return 'Rp0,00';
     if (amount is String) {
       final parsed = parseRupiah(amount);
-      if (parsed == null) return 'Rp 0,000';
+      if (parsed == null) return 'Rp0,00';
       return _currencyFormat.format(parsed);
     }
     return _currencyFormat.format(amount);
@@ -64,13 +65,14 @@ class Formatters {
 
   /// Formats a number for display in a Rupiah input field.
   /// Uses dot as thousands separator and comma as decimal separator.
-  /// Always shows 3 decimal digits.
+  /// Keeps up to 2 decimal digits.
+  /// Correct input example: 12345.67 -> "12.345,67".
   /// Example: 12345.678 → "12.345,678"
   static String rupiahInput(num amount) {
     if (amount == 0) return '';
     try {
       // Use id_ID locale: dot for thousands, comma for decimals
-      final fmt = NumberFormat('#,##0.###', 'id_ID');
+      final fmt = NumberFormat('#,##0.##', 'id_ID');
       return fmt.format(amount);
     } catch (_) {
       // Manual fallback
@@ -95,10 +97,10 @@ class Formatters {
     // Format fractional part (up to 3 digits, trim trailing zeros)
     String fracStr = '';
     if (fracPart > 0) {
-      // Round to 3 decimal places to avoid floating point artifacts
-      final rounded = (fracPart * 1000).round();
+      // Round to 2 decimal places to avoid floating point artifacts
+      final rounded = (fracPart * 100).round();
       if (rounded > 0) {
-        fracStr = ',${'$rounded'.padLeft(3, '0')}';
+        fracStr = ',${'$rounded'.padLeft(2, '0')}';
         // Trim trailing zeros
         fracStr = fracStr.replaceAll(RegExp(r'0+$'), '');
         if (fracStr == ',') fracStr = '';
@@ -228,7 +230,7 @@ class Formatters {
     try {
       return _currencyFormat.format(amount);
     } catch (_) {
-      return 'Rp ${amount.toStringAsFixed(3)}';
+      return 'Rp${amount.toStringAsFixed(2)}';
     }
   }
 }
@@ -272,9 +274,9 @@ class RupiahInputFormatter extends TextInputFormatter {
     intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
     if (intPart.isEmpty) intPart = '0';
 
-    // Limit decimal part to 3 digits max
-    if (decPart != null && decPart.length > 3) {
-      decPart = decPart.substring(0, 3);
+    // Limit decimal part to 2 digits max
+    if (decPart != null && decPart.length > 2) {
+      decPart = decPart.substring(0, 2);
     }
 
     // Format integer part with dot as thousands separator
@@ -284,8 +286,7 @@ class RupiahInputFormatter extends TextInputFormatter {
     );
 
     // Reconstruct
-    final formatted =
-        decPart != null ? '$intPart,$decPart' : intPart;
+    final formatted = decPart != null ? '$intPart,$decPart' : intPart;
 
     return TextEditingValue(
       text: formatted,
