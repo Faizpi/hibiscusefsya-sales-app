@@ -138,6 +138,17 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     return 'retail';
   }
 
+  bool _canEditHargaProduk() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    return user?.isSuperAdmin == true;
+  }
+
+  double _hargaSatuanForSubmit(_ItemRow row) {
+    if (_canEditHargaProduk()) return row.harga;
+    if (row.produk != null) return _resolvedHargaForProduk(row.produk);
+    return row.harga;
+  }
+
   bool _canEditApproved() {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     return widget.data.status != 'Approved' || user?.isSuperAdmin == true;
@@ -375,6 +386,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
       final provider = Provider.of<PenjualanProvider>(context, listen: false);
       final loginName =
           Provider.of<AuthProvider>(context, listen: false).user?.name;
+      final canEditHargaProduk = _canEditHargaProduk();
       final resolvedTag = _tagController.text.trim().isNotEmpty
           ? _tagController.text.trim()
           : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
@@ -404,7 +416,8 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
             .map((i) => {
                   'produk_id': i.produk?.id ?? i.produkId,
                   'kuantitas': i.qty,
-                  'harga_satuan': i.harga,
+                  'harga_satuan':
+                      canEditHargaProduk ? i.harga : _hargaSatuanForSubmit(i),
                   'diskon': i.diskon,
                   'deskripsi': i.deskripsiController.text.isNotEmpty
                       ? i.deskripsiController.text
@@ -809,6 +822,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                         : produkProvider.items
                             .where((p) => _allowedProdukIds.contains(p.id))
                             .toList());
+                final canEditHargaProduk = _canEditHargaProduk();
                 return Column(
                   children: List.generate(_items.length, (i) {
                     final item = _items[i];
@@ -906,25 +920,34 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                                         'harga-$i-${item.produk?.id ?? item.produkId}-${item.harga}'),
                                     initialValue:
                                         Formatters.rupiahInput(item.harga),
-                                    decoration: const InputDecoration(
-                                        labelText: 'Harga', isDense: true),
+                                    readOnly: !canEditHargaProduk,
+                                    enableInteractiveSelection:
+                                        canEditHargaProduk,
+                                    decoration: InputDecoration(
+                                      labelText: 'Harga',
+                                      isDense: true,
+                                      suffixIcon: canEditHargaProduk
+                                          ? null
+                                          : const Icon(Icons.lock_outline,
+                                              size: 18),
+                                    ),
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
                                             decimal: true),
                                     inputFormatters: const [
                                       RupiahInputFormatter(),
                                     ],
-                                    onChanged: (v) => setState(() =>
-                                        item.harga =
-                                            Formatters.parseRupiah(v) ?? 0),
+                                    onChanged: canEditHargaProduk
+                                        ? (v) => setState(() => item.harga =
+                                            Formatters.parseRupiah(v) ?? 0)
+                                        : null,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   flex: 1,
                                   child: TextFormField(
-                                    key: ValueKey(
-                                        'disc-$i-${item.diskon}'),
+                                    key: ValueKey('disc-$i-${item.diskon}'),
                                     initialValue: item.diskon > 0
                                         ? item.diskon.toString()
                                         : '0',
@@ -1005,13 +1028,11 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       key: ValueKey('diskonAkhir-$_diskonAkhir'),
-                      initialValue:
-                          Formatters.rupiahInput(_diskonAkhir),
+                      initialValue: Formatters.rupiahInput(_diskonAkhir),
                       decoration: const InputDecoration(
                           labelText: 'Diskon Akhir (Rp)', isDense: true),
                       keyboardType:
-                          const TextInputType.numberWithOptions(
-                              decimal: true),
+                          const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: const [RupiahInputFormatter()],
                       onChanged: (v) => setState(
                           () => _diskonAkhir = Formatters.parseRupiah(v) ?? 0),
@@ -1019,16 +1040,14 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       key: ValueKey('tax-$_taxPercentage'),
-                      initialValue: _taxPercentage > 0
-                          ? _taxPercentage.toString()
-                          : '0',
+                      initialValue:
+                          _taxPercentage > 0 ? _taxPercentage.toString() : '0',
                       decoration: const InputDecoration(
                           labelText: 'Pajak (%)', isDense: true),
                       keyboardType:
-                          const TextInputType.numberWithOptions(
-                              decimal: true),
-                      onChanged: (v) => setState(
-                          () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (v) => setState(() =>
+                          _taxPercentage = Formatters.parseDecimal(v) ?? 0),
                     ),
                     const SizedBox(height: 8),
                     Row(

@@ -115,6 +115,16 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     return 'retail';
   }
 
+  bool _canEditHargaProduk() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    return user?.isSuperAdmin == true;
+  }
+
+  double _hargaSatuanForSubmit(_ItemRow row) {
+    if (_canEditHargaProduk()) return row.harga;
+    return _resolvedHargaForProduk(row.produk);
+  }
+
   void _applySelectedProdukToRow(_ItemRow row, ProdukModel? produk) {
     row.produk = produk;
     row.harga = _resolvedHargaForProduk(produk);
@@ -403,6 +413,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
       final provider = Provider.of<PenjualanProvider>(context, listen: false);
       final loginName =
           Provider.of<AuthProvider>(context, listen: false).user?.name;
+      final canEditHargaProduk = _canEditHargaProduk();
       final resolvedTag = _tagController.text.trim().isNotEmpty
           ? _tagController.text.trim()
           : (loginName?.trim().isNotEmpty == true ? loginName!.trim() : null);
@@ -431,7 +442,8 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
             .map((i) => {
                   'produk_id': i.produk!.id,
                   'kuantitas': i.qty,
-                  'harga_satuan': i.harga,
+                  'harga_satuan':
+                      canEditHargaProduk ? i.harga : _hargaSatuanForSubmit(i),
                   'diskon': i.diskon,
                   'deskripsi': i.deskripsiController.text.isNotEmpty
                       ? i.deskripsiController.text
@@ -836,6 +848,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                         : produkProvider.items
                             .where((p) => _allowedProdukIds.contains(p.id))
                             .toList());
+                final canEditHargaProduk = _canEditHargaProduk();
 
                 return Column(
                   children: List.generate(_items.length, (i) {
@@ -931,21 +944,33 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                                   flex: 2,
                                   child: TextFormField(
                                     key: ValueKey(
-                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}-${_tipeHarga}'),
+                                        'harga-$i-${_items[i].produk?.id}-${_items[i].harga}-$_tipeHarga'),
                                     initialValue:
                                         Formatters.rupiahInput(_items[i].harga),
-                                    decoration: const InputDecoration(
-                                        labelText: 'Harga', isDense: true),
+                                    readOnly: !canEditHargaProduk,
+                                    enableInteractiveSelection:
+                                        canEditHargaProduk,
+                                    decoration: InputDecoration(
+                                      labelText: 'Harga',
+                                      isDense: true,
+                                      suffixIcon: canEditHargaProduk
+                                          ? null
+                                          : const Icon(Icons.lock_outline,
+                                              size: 18),
+                                    ),
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
                                             decimal: true),
                                     inputFormatters: const [
                                       RupiahInputFormatter(),
                                     ],
-                                    onChanged: (v) => setState(() {
-                                      _items[i].harga =
-                                          Formatters.parseRupiah(v) ?? 0;
-                                    }),
+                                    onChanged: canEditHargaProduk
+                                        ? (v) => setState(() {
+                                              _items[i].harga =
+                                                  Formatters.parseRupiah(v) ??
+                                                      0;
+                                            })
+                                        : null,
                                   ),
                                 ),
                                 const SizedBox(width: 8),

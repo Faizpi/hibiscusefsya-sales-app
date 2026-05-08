@@ -1762,10 +1762,10 @@ class DetailPrintActionsHelper {
       final message =
           'Halo ${pelanggan.isNotEmpty ? pelanggan : 'Pelanggan'},\n\n'
           'Berikut invoice transaksi Anda:\n'
-          'No. Invoice : $nomorInvoice\n'
-          'Jatuh Tempo : ${jatuhTempo.isNotEmpty ? jatuhTempo : '-'}\n'
-          'Pembayaran  : ${jenisPembayaran.isNotEmpty ? jenisPembayaran : '-'}\n'
-          'Total       : $grandTotal\n\n'
+          'No. Invoice: $nomorInvoice\n'
+          'Jatuh Tempo: ${jatuhTempo.isNotEmpty ? jatuhTempo : '-'}\n'
+          'Pembayaran: ${jenisPembayaran.isNotEmpty ? jenisPembayaran : '-'}\n'
+          'Total: $grandTotal\n\n'
           'Silakan unduh PDF invoice melalui link berikut:\n'
           '$pdfUrl\n\n'
           'Terima kasih telah berbelanja di Hibiscus Efsya.';
