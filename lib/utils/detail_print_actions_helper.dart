@@ -20,6 +20,8 @@ import '../widgets/glass_container.dart';
 import '../widgets/camera_lampiran_capture_screen.dart';
 
 class DetailPrintActionsHelper {
+  static Future<CapabilityProfile>? _capabilityProfileFuture;
+
   static List<Widget> buildAppBarActions({
     required BuildContext context,
     required String type,
@@ -310,20 +312,7 @@ class DetailPrintActionsHelper {
 
       final response = await service.getBluetoothData(type: type, id: id);
       final data = _unwrapData(response);
-
-      // Ambil invoice URL untuk tombol WhatsApp
-      String? invoiceUrl;
-      try {
-        final qrResponse = await service.getQrData(type: type, id: id);
-        final qrData = _unwrapData(qrResponse);
-        invoiceUrl = _findString(qrData, 'invoice_url') ??
-            _findString(qrData, 'public_url') ??
-            _findString(qrData, 'url') ??
-            _findString(qrResponse, 'invoice_url') ??
-            _findString(qrResponse, 'public_url');
-      } catch (_) {
-        // Tidak wajib, lanjut print tanpa WhatsApp URL
-      }
+      final invoiceUrl = _resolveInvoiceUrl(data, fallback: response);
 
       final printData = {
         ...data,
@@ -331,8 +320,7 @@ class DetailPrintActionsHelper {
         '_source_type': type,
         '_source_id': id,
         'paper_size': paperSize, // '58mm' atau '80mm'
-        if (invoiceUrl != null && invoiceUrl.isNotEmpty)
-          '_invoice_url': invoiceUrl,
+        if (invoiceUrl.isNotEmpty) '_invoice_url': invoiceUrl,
       };
 
       if (!context.mounted) return;
@@ -530,12 +518,15 @@ class DetailPrintActionsHelper {
     previewWidgets.add(
         Text('-' * 150, style: mono, maxLines: 1, overflow: TextOverflow.clip));
     previewWidgets.add(SizedBox(height: is80mm ? 10 : 6));
+    final footerFontSize = is80mm ? 9.5 : 8.5;
+    final footerMono = monoCenter.copyWith(fontSize: footerFontSize);
+    final footerMuted = footerMono.copyWith(color: const Color(0xFF555555));
+
     // Teks promosi
     previewWidgets.add(
       Text(
-        'Periksa Invoice & Ambil Promo !!!',
-        style: monoCenter.copyWith(
-          fontSize: fontSize - 1,
+        'Periksa Invoice & Ambil Promo !',
+        style: footerMono.copyWith(
           fontWeight: FontWeight.w700,
         ),
         textAlign: TextAlign.center,
@@ -545,7 +536,10 @@ class DetailPrintActionsHelper {
     // Garis putus-putus pemisah sebelum QR
     previewWidgets.add(
       Text('- ' * 20,
-          style: mono.copyWith(color: const Color(0xFF999999)),
+          style: mono.copyWith(
+            color: const Color(0xFF999999),
+            fontSize: footerFontSize,
+          ),
           maxLines: 1,
           overflow: TextOverflow.clip,
           textAlign: TextAlign.center),
@@ -565,15 +559,16 @@ class DetailPrintActionsHelper {
     previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
       Text('customer.hibiscusefsya.com',
-          style:
-              monoCenter.copyWith(fontSize: 10, color: const Color(0xFF555555)),
-          textAlign: TextAlign.center),
+          style: footerMuted, textAlign: TextAlign.center),
     );
     previewWidgets.add(const SizedBox(height: 4));
     // Garis putus-putus pemisah setelah QR
     previewWidgets.add(
       Text('- ' * 20,
-          style: mono.copyWith(color: const Color(0xFF999999)),
+          style: mono.copyWith(
+            color: const Color(0xFF999999),
+            fontSize: footerFontSize,
+          ),
           maxLines: 1,
           overflow: TextOverflow.clip,
           textAlign: TextAlign.center),
@@ -581,17 +576,20 @@ class DetailPrintActionsHelper {
     previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
       Text('marketing@hibiscusefsya.com',
-          style: monoCenter, textAlign: TextAlign.center),
+          style: footerMono, textAlign: TextAlign.center),
     );
     previewWidgets.add(const SizedBox(height: 6));
     previewWidgets.add(
-      Text('Official WA Chat: +6285195550202',
-          style: monoCenter, textAlign: TextAlign.center),
+      Text(
+        'Official WA Chat:\n${_formatPhone("+6285195550202")}',
+        style: footerMono,
+        textAlign: TextAlign.center,
+      ),
     );
     previewWidgets.add(const SizedBox(height: 8));
     previewWidgets.add(
       Text('Terima kasih',
-          style: monoCenter.copyWith(fontWeight: FontWeight.w600),
+          style: footerMono.copyWith(fontWeight: FontWeight.w600),
           textAlign: TextAlign.center),
     );
     previewWidgets.add(const SizedBox(height: 12));
@@ -933,7 +931,8 @@ class DetailPrintActionsHelper {
   }
 
   static Future<List<int>> _buildEscPosBytes(Map<String, dynamic> data) async {
-    final profile = await CapabilityProfile.load();
+    final profile =
+        await (_capabilityProfileFuture ??= CapabilityProfile.load());
     final is80mm = _stringValue(data['paper_size']) == '80mm';
     final generator =
         Generator(is80mm ? PaperSize.mm80 : PaperSize.mm58, profile);
@@ -984,7 +983,7 @@ class DetailPrintActionsHelper {
     bytes.addAll(generator.hr());
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
-      'Periksa Invoice & Ambil Promo !!!',
+      'Periksa Invoice & Ambil Promo !',
       styles: const PosStyles(
         align: PosAlign.center,
         bold: true,
@@ -996,7 +995,10 @@ class DetailPrintActionsHelper {
     final dashLine = '- ' * (is80mm ? 24 : 16);
     bytes.addAll(generator.text(
       dashLine,
-      styles: const PosStyles(align: PosAlign.center),
+      styles: const PosStyles(
+        align: PosAlign.center,
+        fontType: PosFontType.fontB,
+      ),
     ));
     bytes.addAll(generator.feed(1));
     // QR Code website pelanggan
@@ -1008,22 +1010,34 @@ class DetailPrintActionsHelper {
     // Garis putus-putus pemisah setelah QR
     bytes.addAll(generator.text(
       dashLine,
-      styles: const PosStyles(align: PosAlign.center),
+      styles: const PosStyles(
+        align: PosAlign.center,
+        fontType: PosFontType.fontB,
+      ),
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
       'marketing@hibiscusefsya.com',
-      styles: const PosStyles(align: PosAlign.center),
+      styles: const PosStyles(
+        align: PosAlign.center,
+        fontType: PosFontType.fontB,
+      ),
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
-      'Official WA Chat: +6285195550202',
-      styles: const PosStyles(align: PosAlign.center),
+      'Official WA Chat:\n${_formatPhone("+6285195550202")}',
+      styles: const PosStyles(
+        align: PosAlign.center,
+        fontType: PosFontType.fontB,
+      ),
     ));
     bytes.addAll(generator.feed(1));
     bytes.addAll(generator.text(
       'Terima kasih',
-      styles: const PosStyles(align: PosAlign.center),
+      styles: const PosStyles(
+        align: PosAlign.center,
+        fontType: PosFontType.fontB,
+      ),
     ));
     bytes.addAll(generator.feed(is80mm ? 3 : 2));
     bytes.addAll(generator.cut());
@@ -1058,19 +1072,19 @@ class DetailPrintActionsHelper {
       _kvLine('Tanggal', _stringValue(data['tanggal'])),
       _kvLine('Jatuh Tempo', _stringValue(data['jatuh_tempo'])),
       _kvLine('Pembayaran', _stringValue(data['pembayaran'])),
-      _kvLine('Pelanggan', _stringValue(data['pelanggan'])),
+      _kvLine('Pelanggan', _limitReceiptText(data['pelanggan'])),
       // Selalu tampilkan No. Telepon, N/A jika kosong
       _kvLine(
           'No. Telepon',
           _stringValue(data['no_telepon']).isNotEmpty
-              ? _stringValue(data['no_telepon'])
+              ? _formatPhone(data['no_telepon'])
               : 'N/A'),
-      _kvLine('Sales', _stringValue(data['sales'])),
+      _kvLine('Sales', _limitReceiptText(data['sales'])),
       // Selalu tampilkan No. Telp Sales, N/A jika kosong
       _kvLine(
           'No. Telp Sales',
           _stringValue(data['sales_no_telp']).isNotEmpty
-              ? _stringValue(data['sales_no_telp'])
+              ? _formatPhone(data['sales_no_telp'])
               : 'N/A'),
     ]);
     if (_stringValue(data['no_referensi']).isNotEmpty) {
@@ -1093,8 +1107,8 @@ class DetailPrintActionsHelper {
           ? _stringValue(item['exp'])
           : _stringValue(item['expired_date']);
       final expVal = _formatExpDate(rawExp);
-      lines.add(_wrapText(
-          _itemQuantityPrice(item, batchVal: batchVal, expVal: expVal)));
+      lines.add(_twoColumn('Batch', '$batchVal - $expVal'));
+      lines.add(_twoColumn('Qty', _itemQuantityPrice(item)));
       final diskon = _numValue(item['diskon']);
       if (diskon > 0) {
         lines.add(_twoColumn(
@@ -1142,7 +1156,9 @@ class DetailPrintActionsHelper {
       if (user is Map) pembuatNama = _stringValue(user['name']);
     }
     if (pembuatNama.isEmpty) pembuatNama = _stringValue(data['pembuat']);
-    if (pembuatNama.isNotEmpty) lines.add(_kvLine('Pembuat', pembuatNama));
+    if (pembuatNama.isNotEmpty) {
+      lines.add(_kvLine('Pembuat', _limitReceiptText(pembuatNama)));
+    }
     // Pelanggan (dari sales_nama atau kontak nested)
     String pelangganNama = _stringValue(data['sales_nama']);
     if (pelangganNama.isEmpty) {
@@ -1155,10 +1171,10 @@ class DetailPrintActionsHelper {
       }
     }
     if (pelangganNama.isNotEmpty) {
-      lines.add(_kvLine('Pelanggan', pelangganNama));
+      lines.add(_kvLine('Pelanggan', _limitReceiptText(pelangganNama)));
     }
     if (_stringValue(data['sales_no_telepon']).isNotEmpty) {
-      lines.add(_kvLine('No. Telepon', _stringValue(data['sales_no_telepon'])));
+      lines.add(_kvLine('No. Telepon', _formatPhone(data['sales_no_telepon'])));
     }
     final alamat = _stringValue(data['sales_alamat']);
     if (alamat.isNotEmpty) {
@@ -1241,7 +1257,7 @@ class DetailPrintActionsHelper {
     }
     lines.addAll([
       _kvLine('Vendor', _stringValue(data['vendor'])),
-      _kvLine('Dibuat oleh', _stringValue(data['sales'])),
+      _kvLine('Dibuat oleh', _limitReceiptText(data['sales'])),
     ]);
     if (_stringValue(data['tahun_anggaran']).isNotEmpty) {
       lines.add(_kvLine('Thn Anggaran', _stringValue(data['tahun_anggaran'])));
@@ -1258,31 +1274,21 @@ class DetailPrintActionsHelper {
     final items = _listOfMaps(data['items']);
     for (final item in items) {
       lines.add(_wrapText(_itemName(item)));
-      final qty = _numValue(item['qty'] ?? item['kuantitas']);
-      final unit = _stringValue(item['unit']).isNotEmpty
-          ? _stringValue(item['unit'])
-          : (_stringValue(item['satuan']).isNotEmpty
-              ? _stringValue(item['satuan'])
-              : 'Pcs');
-      lines.add(_twoColumn(
-          'Qty', '${qty.toStringAsFixed(qty % 1 == 0 ? 0 : 2)} $unit'));
+      final rawBatch = _stringValue(item['batch_number']).isNotEmpty
+          ? _stringValue(item['batch_number'])
+          : _stringValue(item['batch']);
+      final batchVal = rawBatch.isNotEmpty ? rawBatch : 'N/A';
+      final rawExp = _stringValue(item['expired_date']).isNotEmpty
+          ? _stringValue(item['expired_date'])
+          : _stringValue(item['exp']);
+      final expVal = _formatExpDate(rawExp);
+      lines.add(_twoColumn('Batch', '$batchVal - $expVal'));
+      lines.add(_twoColumn('Qty', _itemQuantityPrice(item)));
       // Diskon item (bisa dalam % atau nominal)
       final diskonPct = _numValue(item['diskon']);
       if (diskonPct > 0) {
         lines.add(_twoColumn('Diskon',
             '${diskonPct.toStringAsFixed(diskonPct % 1 == 0 ? 0 : 2)}%'));
-      }
-      if (_stringValue(item['batch_number']).isNotEmpty) {
-        lines.add(_kvLine('Batch', _stringValue(item['batch_number'])));
-      }
-      if (_stringValue(item['batch']).isNotEmpty) {
-        lines.add(_kvLine('Batch', _stringValue(item['batch'])));
-      }
-      if (_stringValue(item['expired_date']).isNotEmpty) {
-        lines.add(_kvLine('Exp', _stringValue(item['expired_date'])));
-      }
-      if (_stringValue(item['exp']).isNotEmpty) {
-        lines.add(_kvLine('Exp', _stringValue(item['exp'])));
       }
       if (_stringValue(item['deskripsi']).isNotEmpty) {
         lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
@@ -1328,7 +1334,7 @@ class DetailPrintActionsHelper {
       lines.add(_kvLine('Alamat', _stringValue(data['alamat_penagihan'])));
     }
     lines.addAll([
-      _kvLine('Dibuat oleh', _stringValue(data['sales'])),
+      _kvLine('Dibuat oleh', _limitReceiptText(data['sales'])),
     ]);
     if (_stringValue(data['tag']).isNotEmpty) {
       lines.add(_kvLine('Tag', _stringValue(data['tag'])));
@@ -1499,6 +1505,52 @@ class DetailPrintActionsHelper {
     if (value is String) return value.trim();
     if (value is num || value is bool) return value.toString();
     return value.toString().trim();
+  }
+
+  static String _limitReceiptText(dynamic value, {int max = 20}) {
+    final text = _stringValue(value);
+    if (text.length <= max) return text;
+    if (max <= 3) return text.substring(0, max);
+    return '${text.substring(0, max - 3)}...';
+  }
+
+  static String _formatPhone(dynamic value) {
+    final raw = _stringValue(value);
+    if (raw.isEmpty) return '';
+    final digitBuffer = StringBuffer();
+    for (final codeUnit in raw.codeUnits) {
+      if (codeUnit >= 48 && codeUnit <= 57) {
+        digitBuffer.writeCharCode(codeUnit);
+      }
+    }
+    var digits = digitBuffer.toString();
+    if (digits.isEmpty) return raw;
+
+    if (digits.startsWith('620')) {
+      digits = '62${digits.substring(3)}';
+    }
+    if (digits.startsWith('62')) {
+      return '+62 ${_groupPhoneDigits(digits.substring(2))}';
+    }
+    if (digits.startsWith('0')) {
+      return _groupPhoneDigits(digits);
+    }
+    if (digits.startsWith('8') && digits.length >= 9) {
+      return '+62 ${_groupPhoneDigits(digits)}';
+    }
+    if (raw.startsWith('+')) {
+      return '+${_groupPhoneDigits(digits)}';
+    }
+    return _groupPhoneDigits(digits);
+  }
+
+  static String _groupPhoneDigits(String digits) {
+    final groups = <String>[];
+    for (var i = 0; i < digits.length; i += 4) {
+      final end = (i + 4 < digits.length) ? i + 4 : digits.length;
+      groups.add(digits.substring(i, end));
+    }
+    return groups.join('-');
   }
 
   static num _numValue(dynamic value) {
@@ -1692,8 +1744,6 @@ class DetailPrintActionsHelper {
       final service = await _serviceFromContext(context);
       if (service == null) return;
 
-      _snack(context, 'Menyiapkan link invoice...');
-
       final sourceType = _stringValue(data['_source_type']).isNotEmpty
           ? _stringValue(data['_source_type'])
           : _stringValue(data['type']);
@@ -1704,43 +1754,26 @@ class DetailPrintActionsHelper {
         return;
       }
 
-      final qrResponse =
-          await service.getQrData(type: sourceType, id: sourceId);
-      final qrData = _unwrapData(qrResponse);
-
-      final receiptUrl = _findString(qrData, 'receipt_url') ??
-          _findString(qrData, 'pdf_url') ??
-          _findString(qrData, 'download_url') ??
-          _findString(qrData, 'struk_url') ??
-          _findString(qrResponse, 'receipt_url') ??
-          _findString(qrResponse, 'pdf_url') ??
-          _findString(qrResponse, 'download_url') ??
-          _findString(qrResponse, 'struk_url');
-      final invoiceUrl = _findString(qrData, 'invoice_url') ??
-          _findString(qrData, 'public_url') ??
-          _findString(qrData, 'url') ??
-          _findString(qrResponse, 'invoice_url') ??
-          _findString(qrResponse, 'public_url');
-      final pdfUrl = (receiptUrl != null && receiptUrl.trim().isNotEmpty)
-          ? receiptUrl.trim()
-          : (invoiceUrl != null && invoiceUrl.trim().isNotEmpty)
-              ? invoiceUrl.trim()
-              : '';
-      if (pdfUrl.isEmpty) {
-        _snack(context, 'Link PDF invoice tidak tersedia.', isError: true);
+      var invoiceUrl = _resolveInvoiceUrl(data);
+      if (invoiceUrl.isEmpty) {
+        final qrResponse =
+            await service.getQrData(type: sourceType, id: sourceId);
+        final qrData = _unwrapData(qrResponse);
+        invoiceUrl = _resolveInvoiceUrl(qrData, fallback: qrResponse);
+      }
+      if (invoiceUrl.isEmpty) {
+        _snack(context, 'Link invoice tidak tersedia.', isError: true);
         return;
       }
 
       // Normalisasi nomor telepon pelanggan
       final noTelepon = _resolveCustomerPhone(data);
-      String phone = noTelepon.replaceAll(RegExp(r'[^\d]'), '');
+      final phone = _normalizePhoneForWhatsApp(noTelepon);
       if (phone.isEmpty) {
         _snack(context, 'Nomor telepon pelanggan tidak tersedia.',
             isError: true);
         return;
       }
-      if (phone.startsWith('0')) phone = '62${phone.substring(1)}';
-      if (!phone.startsWith('62')) phone = '62$phone';
 
       final pelanggan = _stringValue(data['pelanggan']);
       final grandTotal = _currency(_numValue(data['grand_total']));
@@ -1766,8 +1799,8 @@ class DetailPrintActionsHelper {
           'Jatuh Tempo: ${jatuhTempo.isNotEmpty ? jatuhTempo : '-'}\n'
           'Pembayaran: ${jenisPembayaran.isNotEmpty ? jenisPembayaran : '-'}\n'
           'Total: $grandTotal\n\n'
-          'Silakan unduh PDF invoice melalui link berikut:\n'
-          '$pdfUrl\n\n'
+          'Silakan buka invoice melalui link berikut:\n'
+          '$invoiceUrl\n\n'
           'Terima kasih telah berbelanja di Hibiscus Efsya.';
 
       final waUri = Uri.parse(
@@ -1779,7 +1812,7 @@ class DetailPrintActionsHelper {
         _snack(context, 'Gagal membuka WhatsApp.', isError: true);
       }
     } catch (e) {
-      _snack(context, 'Gagal menyiapkan PDF: $e', isError: true);
+      _snack(context, 'Gagal menyiapkan WhatsApp: $e', isError: true);
     }
   }
 
@@ -1801,33 +1834,163 @@ class DetailPrintActionsHelper {
     return '';
   }
 
-  static String _resolveCustomerPhone(Map<String, dynamic> data) {
-    final direct = [
-      data['no_telepon'],
-      data['no_telp'],
-      data['telepon'],
-      data['phone'],
+  static String _resolveInvoiceUrl(
+    Map<String, dynamic> data, {
+    Map<String, dynamic>? fallback,
+  }) {
+    const keys = [
+      '_invoice_url',
+      'download_url',
+      'receipt_url',
+      'pdf_url',
+      'struk_url',
+      'invoice_url',
+      'public_url',
+      'url',
     ];
-    for (final value in direct) {
-      final parsed = _stringValue(value);
-      if (parsed.isNotEmpty) return parsed;
+
+    for (final key in keys) {
+      final value = _findString(data, key);
+      if (value != null && value.trim().isNotEmpty) return value.trim();
     }
 
-    final kontak = data['kontak'];
-    if (kontak is Map) {
-      final nested = [
-        kontak['no_telepon'],
-        kontak['no_telp'],
-        kontak['telepon'],
-        kontak['phone'],
-      ];
-      for (final value in nested) {
-        final parsed = _stringValue(value);
-        if (parsed.isNotEmpty) return parsed;
+    if (fallback != null) {
+      for (final key in keys) {
+        final value = _findString(fallback, key);
+        if (value != null && value.trim().isNotEmpty) return value.trim();
       }
     }
 
     return '';
+  }
+
+  static String _resolveCustomerPhone(Map<String, dynamic> data) {
+    const directKeys = [
+      'no_telepon',
+      'no_telp',
+      'telepon',
+      'nomor_telepon',
+      'phone',
+      'no_hp',
+      'hp',
+      'whatsapp',
+      'wa',
+      'kontak_no_telepon',
+      'kontak_no_telp',
+      'kontak_phone',
+      'pelanggan_no_telepon',
+      'pelanggan_no_telp',
+      'pelanggan_phone',
+      'customer_no_telepon',
+      'customer_no_telp',
+      'customer_phone',
+      'no_telp_kontak',
+    ];
+
+    final direct = _firstPhoneValue(data, directKeys);
+    if (direct.isNotEmpty) return direct;
+
+    for (final nestedKey in const ['kontak', 'pelanggan', 'customer']) {
+      final nested = data[nestedKey];
+      if (nested is Map) {
+        final parsed = _findPhoneInMap(
+          nested.map((k, v) => MapEntry(k.toString(), v)),
+          allowSalesKeys: false,
+        );
+        if (parsed.isNotEmpty) return parsed;
+      }
+    }
+
+    final type = _stringValue(data['_source_type']).isNotEmpty
+        ? _stringValue(data['_source_type'])
+        : _stringValue(data['type']);
+    if (type.toLowerCase().contains('kunjungan')) {
+      final salesPhone = _firstPhoneValue(data, const ['sales_no_telepon']);
+      if (salesPhone.isNotEmpty) return salesPhone;
+    }
+
+    return _findPhoneInMap(data, allowSalesKeys: false);
+  }
+
+  static String _firstPhoneValue(
+    Map<String, dynamic> data,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = _phoneCandidate(data[key]);
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  static String _findPhoneInMap(
+    Map<String, dynamic> data, {
+    required bool allowSalesKeys,
+  }) {
+    for (final entry in data.entries) {
+      final key = entry.key.toLowerCase();
+      if (!allowSalesKeys &&
+          (key.contains('sales') ||
+              key.contains('user') ||
+              key.contains('approver'))) {
+        continue;
+      }
+
+      final value = _phoneCandidate(entry.value);
+      if (value.isNotEmpty &&
+          (key.contains('telp') ||
+              key.contains('telepon') ||
+              key.contains('phone') ||
+              key.contains('whatsapp') ||
+              key == 'wa' ||
+              key.endsWith('_wa'))) {
+        return value;
+      }
+
+      final nested = entry.value;
+      if (nested is Map) {
+        final found = _findPhoneInMap(
+          nested.map((k, v) => MapEntry(k.toString(), v)),
+          allowSalesKeys: allowSalesKeys,
+        );
+        if (found.isNotEmpty) return found;
+      }
+    }
+    return '';
+  }
+
+  static String _phoneCandidate(dynamic value) {
+    final text = _stringValue(value);
+    if (text.isEmpty) return '';
+    final lower = text.toLowerCase();
+    if (text == '-' ||
+        lower == 'null' ||
+        lower == 'n/a' ||
+        lower == 'na' ||
+        lower == 'tidak ada') {
+      return '';
+    }
+    final digits = text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.length < 8) return '';
+    return text;
+  }
+
+  static String _normalizePhoneForWhatsApp(dynamic value) {
+    final text = _phoneCandidate(value);
+    if (text.isEmpty) return '';
+
+    var digits = text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.isEmpty) return '';
+    if (digits.startsWith('620')) {
+      digits = '62${digits.substring(3)}';
+    } else if (digits.startsWith('0')) {
+      digits = '62${digits.substring(1)}';
+    } else if (digits.startsWith('8')) {
+      digits = '62$digits';
+    } else if (!digits.startsWith('62')) {
+      digits = '62$digits';
+    }
+    return digits.length >= 10 ? digits : '';
   }
 }
 

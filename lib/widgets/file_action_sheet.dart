@@ -125,10 +125,6 @@ Future<void> showFileActionSheet(
                   subtitle: 'Pilih aplikasi untuk membuka file',
                   onTap: () async {
                     Navigator.pop(ctx);
-                    // open_filex 4.x ships its own FileProvider with this authority.
-                    // We must specify it explicitly so Android can resolve the content:// URI.
-                    const authority =
-                        'com.hibiscusefsya.sales_hibiscus_mobile.open_filex.provider';
                     final result = await OpenFilex.open(
                       file.path,
                     );
