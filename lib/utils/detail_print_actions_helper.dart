@@ -1114,6 +1114,10 @@ class DetailPrintActionsHelper {
         lines.add(_twoColumn(
             'Diskon', '${diskon.toStringAsFixed(diskon % 1 == 0 ? 0 : 2)}%'));
       }
+      final diskonNominal = _numValue(item['diskon_nominal']);
+      if (diskonNominal > 0) {
+        lines.add(_twoColumn('Disk. Nominal', '- ${_currency(diskonNominal)}'));
+      }
       if (_stringValue(item['deskripsi']).isNotEmpty) {
         lines.add(_kvLine('Ket', _stringValue(item['deskripsi'])));
       }

@@ -216,6 +216,7 @@ class PenjualanItemModel {
   final String? satuan;
   final num hargaSatuan;
   final num diskon;
+  final num diskonNominal;
   final num total;
   final String? deskripsi;
   final String? unit;
@@ -232,6 +233,7 @@ class PenjualanItemModel {
     this.satuan,
     required this.hargaSatuan,
     required this.diskon,
+    this.diskonNominal = 0,
     required this.total,
     this.deskripsi,
     this.unit,
@@ -244,6 +246,7 @@ class PenjualanItemModel {
     final qty = _parseNum(json['kuantitas']);
     final harga = _parseNum(json['harga_satuan']);
     final disk = _parseNum(json['diskon']);
+    final diskNominal = _parseNum(json['diskon_nominal']);
     num parsedTotal = _parseNum(json['total']) != 0
         ? _parseNum(json['total'])
         : (_parseNum(json['sub_total']) != 0
@@ -251,9 +254,10 @@ class PenjualanItemModel {
             : (_parseNum(json['subtotal']) != 0
                 ? _parseNum(json['subtotal'])
                 : 0));
-    // Calculate if still 0
+    // Calculate if still 0 using full formula including diskon_nominal
     if (parsedTotal == 0 && harga > 0 && qty > 0) {
-      parsedTotal = qty * harga * (1 - disk / 100);
+      final lineTotal = qty * harga * (1 - disk / 100) - diskNominal;
+      parsedTotal = lineTotal < 0 ? 0 : lineTotal;
     }
 
     return PenjualanItemModel(
@@ -265,6 +269,7 @@ class PenjualanItemModel {
       satuan: json['satuan'] ?? json['unit'],
       hargaSatuan: harga,
       diskon: disk,
+      diskonNominal: diskNominal,
       total: parsedTotal,
       deskripsi: json['deskripsi'],
       unit: json['unit'] ?? json['satuan'],

@@ -104,10 +104,12 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
 
   double _resolvedHargaForProduk(ProdukModel? produk) {
     if (produk == null) return 0;
+    final hargaRetail = (produk.harga ?? 0).toDouble();
+    final hargaGrosir = (produk.hargaGrosir ?? 0).toDouble();
     if (_tipeHarga == 'Grosir') {
-      return (produk.hargaGrosir ?? produk.harga ?? 0).toDouble();
+      return hargaGrosir > 0 ? hargaGrosir : hargaRetail;
     }
-    return (produk.harga ?? produk.hargaGrosir ?? 0).toDouble();
+    return hargaRetail;
   }
 
   String _resolvedTipeHargaForApi() {
@@ -327,12 +329,17 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
     return _tglTransaksi.add(Duration(days: days));
   }
 
+  double _lineSubtotal(_ItemRow item) {
+    final subtotal =
+        item.qty * item.harga * (1 - item.diskon / 100) - item.diskonNominal;
+    return subtotal < 0 ? 0 : subtotal;
+  }
+
   double get _subTotal {
     double total = 0;
     for (final item in _items) {
       if (item.produk != null && item.qty > 0) {
-        double lineTotal = item.qty * item.harga * (1 - item.diskon / 100);
-        total += lineTotal;
+        total += _lineSubtotal(item);
       }
     }
     return total;
@@ -447,6 +454,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                   'harga_satuan':
                       canEditHargaProduk ? i.harga : _hargaSatuanForSubmit(i),
                   'diskon': i.diskon,
+                  'diskon_nominal': i.diskonNominal,
                   'deskripsi': i.deskripsiController.text.isNotEmpty
                       ? i.deskripsiController.text
                       : null,
@@ -994,6 +1002,25 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
+                            // Diskon Nominal (Rp) per item
+                            TextFormField(
+                              controller: _items[i].diskonNominalController,
+                              decoration: const InputDecoration(
+                                labelText: 'Diskon Nominal (Rp)',
+                                isDense: true,
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              inputFormatters: const [
+                                RupiahInputFormatter(),
+                              ],
+                              onChanged: (v) => setState(() {
+                                _items[i].diskonNominal =
+                                    Formatters.parseRupiah(v) ?? 0;
+                              }),
+                            ),
+                            const SizedBox(height: 8),
                             // Batch, Exp
                             Row(
                               children: [
@@ -1021,7 +1048,7 @@ class _PenjualanCreateScreenState extends State<PenjualanCreateScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                'Jumlah: ${Formatters.currency(_items[i].produk != null ? _items[i].qty * _items[i].harga * (1 - _items[i].diskon / 100) : 0)}',
+                                'Jumlah: ${Formatters.currency(_items[i].produk != null ? _lineSubtotal(_items[i]) : 0)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppTheme.primaryColor,
@@ -1232,8 +1259,10 @@ class _ItemRow {
   int qty = 1;
   double harga = 0;
   double diskon = 0;
+  double diskonNominal = 0;
   DateTime? expDate;
   final deskripsiController = TextEditingController();
   final unitController = TextEditingController();
   final batchController = TextEditingController();
+  final diskonNominalController = TextEditingController();
 }

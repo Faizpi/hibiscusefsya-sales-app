@@ -79,7 +79,10 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
           ..namaProduk = item.namaProduk
           ..qty = item.kuantitas.toDouble()
           ..harga = item.hargaSatuan.toDouble()
-          ..diskon = item.diskon.toDouble();
+          ..diskon = item.diskon.toDouble()
+          ..diskonNominal = item.diskonNominal.toDouble();
+        row.diskonNominalController.text =
+            Formatters.rupiahInput(row.diskonNominal);
         row.deskripsiController.text = (item.deskripsi ?? '').trim();
         row.unitController.text =
             (item.unit ?? item.satuan ?? 'Pcs').toString().trim();
@@ -126,11 +129,13 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
 
   double _resolvedHargaForProduk(ProdukModel? produk) {
     if (produk == null) return 0;
+    final hargaRetail = (produk.harga ?? 0).toDouble();
+    final hargaGrosir = (produk.hargaGrosir ?? 0).toDouble();
     final tipeHarga = _tipeHarga.trim().toLowerCase();
     if (tipeHarga == 'grosir') {
-      return (produk.hargaGrosir ?? produk.harga ?? 0).toDouble();
+      return hargaGrosir > 0 ? hargaGrosir : hargaRetail;
     }
-    return (produk.harga ?? produk.hargaGrosir ?? 0).toDouble();
+    return hargaRetail;
   }
 
   String _resolvedTipeHargaForApi() {
@@ -339,11 +344,17 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
     return _tglTransaksi.add(Duration(days: days));
   }
 
+  double _lineSubtotal(_ItemRow item) {
+    final subtotal =
+        item.qty * item.harga * (1 - item.diskon / 100) - item.diskonNominal;
+    return subtotal < 0 ? 0 : subtotal;
+  }
+
   double get _subTotal {
     double total = 0;
     for (final item in _items) {
       if (item.qty > 0) {
-        total += item.qty * item.harga * (1 - item.diskon / 100);
+        total += _lineSubtotal(item);
       }
     }
     return total;
@@ -421,6 +432,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                   'harga_satuan':
                       canEditHargaProduk ? i.harga : _hargaSatuanForSubmit(i),
                   'diskon': i.diskon,
+                  'diskon_nominal': i.diskonNominal,
                   'deskripsi': i.deskripsiController.text.isNotEmpty
                       ? i.deskripsiController.text
                       : null,
@@ -966,6 +978,25 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
+                            // Diskon Nominal (Rp) per item
+                            TextFormField(
+                              controller: item.diskonNominalController,
+                              decoration: const InputDecoration(
+                                labelText: 'Diskon Nominal (Rp)',
+                                isDense: true,
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              inputFormatters: const [
+                                RupiahInputFormatter(),
+                              ],
+                              onChanged: (v) => setState(() {
+                                item.diskonNominal =
+                                    Formatters.parseRupiah(v) ?? 0;
+                              }),
+                            ),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
@@ -991,7 +1022,7 @@ class _PenjualanEditScreenState extends State<PenjualanEditScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                'Jumlah: ${Formatters.currency(item.qty * item.harga * (1 - item.diskon / 100))}',
+                                'Jumlah: ${Formatters.currency(_lineSubtotal(item))}',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: AppTheme.primaryColor),
@@ -1124,8 +1155,10 @@ class _ItemRow {
   double qty = 1;
   double harga = 0;
   double diskon = 0;
+  double diskonNominal = 0;
   DateTime? expDate;
   final deskripsiController = TextEditingController();
   final unitController = TextEditingController();
   final batchController = TextEditingController();
+  final diskonNominalController = TextEditingController();
 }

@@ -361,6 +361,14 @@ class _PenjualanDetailScreenState extends State<PenjualanDetailScreen> {
                             fontSize: 12,
                           ),
                         ),
+                      if (item.diskonNominal > 0)
+                        Text(
+                          'Diskon Nominal: - ${Formatters.currency(item.diskonNominal)}',
+                          style: TextStyle(
+                            color: Colors.red[400],
+                            fontSize: 12,
+                          ),
+                        ),
                       if (item.batchNumber != null &&
                           item.batchNumber!.isNotEmpty)
                         Text(
