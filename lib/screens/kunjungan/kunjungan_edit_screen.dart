@@ -81,14 +81,13 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
       Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       _applyUserGudangRule();
     });
   }
-
-
 
   @override
   void dispose() {
@@ -108,13 +107,14 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
       MaterialPageRoute(builder: (_) => const KontakFormScreen()),
     );
     if (mounted) {
-      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      await Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
     }
   }
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    provider.fetchKontak();
+    await provider.fetchKontak(all: true);
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -140,8 +140,6 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
           (k) => k?.id == scannedId,
           orElse: () => null,
         );
-    final scannedName =
-        (result['nama'] ?? matched?.nama ?? '').toString().trim();
     final scannedNoTelp =
         (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =
@@ -358,11 +356,13 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
         }
       }
       // Lookup kontak nama for sales_nama
-      final kontakProvider = Provider.of<KontakProvider>(context, listen: false);
-      final selectedKontak = kontakProvider.items.cast<KontakModel?>().firstWhere(
-            (k) => k?.id == _kontakId,
-            orElse: () => null,
-          );
+      final kontakProvider =
+          Provider.of<KontakProvider>(context, listen: false);
+      final selectedKontak =
+          kontakProvider.items.cast<KontakModel?>().firstWhere(
+                (k) => k?.id == _kontakId,
+                orElse: () => null,
+              );
       final data = <String, dynamic>{
         'tgl_kunjungan': _tglKunjungan.toIso8601String().split('T')[0],
         'kontak_id': _kontakId,
@@ -541,7 +541,8 @@ class _KunjunganEditScreenState extends State<KunjunganEditScreen> {
                   onChanged: (v) {
                     setState(() {
                       _kontakId = v?.id;
-                      _emailController.text = v?.noTelp ?? _emailController.text;
+                      _emailController.text =
+                          v?.noTelp ?? _emailController.text;
                       _alamatController.text =
                           v?.alamat ?? _alamatController.text;
                     });

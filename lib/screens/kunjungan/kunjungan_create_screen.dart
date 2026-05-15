@@ -53,14 +53,13 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
       Provider.of<ProdukProvider>(context, listen: false).fetchProduk();
       Provider.of<GudangProvider>(context, listen: false).fetchGudang();
       _applyUserGudangRule();
     });
   }
-
-
 
   @override
   void dispose() {
@@ -80,14 +79,14 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
       MaterialPageRoute(builder: (_) => const KontakFormScreen()),
     );
     if (mounted) {
-      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      await Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
     }
   }
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    // Don't await – data is already loaded from initState
-    provider.fetchKontak();
+    await provider.fetchKontak(all: true);
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -113,8 +112,6 @@ class _KunjunganCreateScreenState extends State<KunjunganCreateScreen> {
           (k) => k?.id == scannedId,
           orElse: () => null,
         );
-    final scannedName =
-        (result['nama'] ?? matched?.nama ?? '').toString().trim();
     final scannedNoTelp =
         (result['no_telp'] ?? matched?.noTelp ?? '').toString().trim();
     final scannedAlamat =

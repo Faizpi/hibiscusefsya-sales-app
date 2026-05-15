@@ -44,7 +44,8 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
       _applyUserDefaults();
     });
   }
@@ -76,13 +77,14 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
       MaterialPageRoute(builder: (_) => const KontakFormScreen()),
     );
     if (mounted) {
-      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      await Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
     }
   }
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    provider.fetchKontak();
+    await provider.fetchKontak(all: true);
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -383,21 +385,18 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
                                   labelText: 'Deskripsi', isDense: true)),
                           const SizedBox(height: 8),
                           TextFormField(
-                            key: ValueKey(
-                                'jumlah-$i-${_items[i].jumlah}'),
+                            key: ValueKey('jumlah-$i-${_items[i].jumlah}'),
                             initialValue:
                                 Formatters.rupiahInput(_items[i].jumlah),
                             decoration: const InputDecoration(
                                 labelText: 'Jumlah (Rp)', isDense: true),
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             inputFormatters: const [
                               RupiahInputFormatter(),
                             ],
-                            onChanged: (v) => setState(() =>
-                                _items[i].jumlah =
-                                    Formatters.parseRupiah(v) ?? 0),
+                            onChanged: (v) => setState(() => _items[i].jumlah =
+                                Formatters.parseRupiah(v) ?? 0),
                           ),
                         ]),
                       ),
@@ -426,15 +425,14 @@ class _BiayaCreateScreenState extends State<BiayaCreateScreen> {
                                 textAlign: TextAlign.end)),
                       ]),
                   const SizedBox(height: 8),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                          labelText: 'Pajak (%)', isDense: true),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(
-                              decimal: true),
-                      onChanged: (v) => setState(
-                          () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
-                    ),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                        labelText: 'Pajak (%)', isDense: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (v) => setState(
+                        () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

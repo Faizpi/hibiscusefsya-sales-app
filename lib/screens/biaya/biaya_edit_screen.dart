@@ -68,7 +68,8 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
     _taxPercentage = (d.taxPercentage ?? 0).toDouble();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
       _applyUserDefaults();
     });
 
@@ -109,13 +110,14 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
       MaterialPageRoute(builder: (_) => const KontakFormScreen()),
     );
     if (mounted) {
-      await Provider.of<KontakProvider>(context, listen: false).fetchKontak();
+      await Provider.of<KontakProvider>(context, listen: false)
+          .fetchKontak(all: true);
     }
   }
 
   Future<void> _scanKontak() async {
     final provider = Provider.of<KontakProvider>(context, listen: false);
-    provider.fetchKontak();
+    await provider.fetchKontak(all: true);
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -422,21 +424,18 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
                                   labelText: 'Deskripsi', isDense: true)),
                           const SizedBox(height: 8),
                           TextFormField(
-                            key: ValueKey(
-                                'jumlah-$i-${_items[i].jumlah}'),
+                            key: ValueKey('jumlah-$i-${_items[i].jumlah}'),
                             initialValue:
                                 Formatters.rupiahInput(_items[i].jumlah),
                             decoration: const InputDecoration(
                                 labelText: 'Jumlah (Rp)', isDense: true),
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             inputFormatters: const [
                               RupiahInputFormatter(),
                             ],
-                            onChanged: (v) => setState(() =>
-                                _items[i].jumlah =
-                                    Formatters.parseRupiah(v) ?? 0),
+                            onChanged: (v) => setState(() => _items[i].jumlah =
+                                Formatters.parseRupiah(v) ?? 0),
                           ),
                         ]),
                       ),
@@ -463,14 +462,12 @@ class _BiayaEditScreenState extends State<BiayaEditScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     key: ValueKey('tax-$_taxPercentage'),
-                    initialValue: _taxPercentage > 0
-                        ? _taxPercentage.toString()
-                        : '0',
+                    initialValue:
+                        _taxPercentage > 0 ? _taxPercentage.toString() : '0',
                     decoration: const InputDecoration(
                         labelText: 'Pajak (%)', isDense: true),
                     keyboardType:
-                        const TextInputType.numberWithOptions(
-                            decimal: true),
+                        const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (v) => setState(
                         () => _taxPercentage = Formatters.parseDecimal(v) ?? 0),
                   ),

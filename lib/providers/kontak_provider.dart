@@ -16,7 +16,7 @@ class KontakProvider with ChangeNotifier {
     _token = token;
   }
 
-  Future<void> fetchKontak({String? search}) async {
+  Future<void> fetchKontak({String? search, bool all = false}) async {
     if (_token == null) return;
 
     _isLoading = true;
@@ -28,15 +28,104 @@ class KontakProvider with ChangeNotifier {
       final params = <String, String>{};
       if (search != null && search.isNotEmpty) params['search'] = search;
 
-      final response = await api.get('kontak', params: params);
-      final List data = response['data'] ?? [];
-      _items = data.map((e) => KontakModel.fromJson(e)).toList();
+      if (all) {
+        _items = await _fetchAllKontak(api, params);
+      } else {
+        final response = await api.get('kontak', params: params);
+        _items = _parseKontakList(response);
+      }
     } catch (e) {
       _error = e.toString();
     }
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<List<KontakModel>> _fetchAllKontak(
+    ApiService api,
+    Map<String, String> baseParams,
+  ) async {
+    const maxPages = 1000;
+    final allItems = <int, KontakModel>{};
+    var page = 1;
+    var lastPage = 1;
+
+    do {
+      final response = await api.get(
+        'kontak',
+        params: {
+          ...baseParams,
+          'page': page.toString(),
+        },
+      );
+
+      for (final item in _parseKontakList(response)) {
+        allItems[item.id] = item;
+      }
+
+      final currentPage = _extractPageValue(response, 'current_page') ?? page;
+      lastPage = _extractPageValue(response, 'last_page') ?? currentPage;
+      final nextPage = currentPage + 1;
+      if (nextPage <= page) break;
+      page = nextPage;
+    } while (page <= lastPage && page <= maxPages);
+
+    return allItems.values.toList();
+  }
+
+  List<KontakModel> _parseKontakList(dynamic response) {
+    final data = _extractList(response);
+    final parsed = <KontakModel>[];
+
+    for (final item in data) {
+      if (item is Map) {
+        parsed.add(KontakModel.fromJson(Map<String, dynamic>.from(item)));
+      }
+    }
+
+    return parsed;
+  }
+
+  List<dynamic> _extractList(dynamic response) {
+    if (response is List) return response;
+    if (response is! Map) return const [];
+
+    final data = response['data'];
+    if (data is List) return data;
+    if (data is Map) {
+      final nestedData = data['data'];
+      if (nestedData is List) return nestedData;
+    }
+
+    return const [];
+  }
+
+  int? _extractPageValue(dynamic response, String key) {
+    final directValue = _readIntFromMap(response, key);
+    if (directValue != null) return directValue;
+
+    if (response is Map) {
+      final dataValue = _readIntFromMap(response['data'], key);
+      if (dataValue != null) return dataValue;
+
+      final metaValue = _readIntFromMap(response['meta'], key);
+      if (metaValue != null) return metaValue;
+    }
+
+    return null;
+  }
+
+  int? _readIntFromMap(dynamic value, String key) {
+    if (value is! Map) return null;
+    return _parseInt(value[key]);
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   Future<KontakModel> createKontak(Map<String, dynamic> data) async {
