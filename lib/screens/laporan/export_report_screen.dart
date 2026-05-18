@@ -489,89 +489,98 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               canExportReport)
                             LayoutBuilder(
                               builder: (context, constraints) {
-                                final buttonWidth =
-                                    (constraints.maxWidth - 10) / 2;
+                                final canPdf = options.allowedFormats
+                                    .contains('pdf');
+                                final canExcel = options.allowedFormats
+                                    .contains('excel');
+                                final bothAllowed = canPdf && canExcel;
+                                final buttonWidth = bothAllowed
+                                    ? (constraints.maxWidth - 10) / 2
+                                    : constraints.maxWidth;
 
                                 return Wrap(
                                   spacing: 10,
                                   runSpacing: 10,
                                   children: [
-                                    SizedBox(
-                                      width: buttonWidth,
-                                      height: 48,
-                                      child: ElevatedButton.icon(
-                                        onPressed: _isExporting
-                                            ? null
-                                            : () => _exportReport(
-                                                forcedFormat: 'pdf'),
-                                        icon: _isExporting
-                                            ? const SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                            : const Icon(Icons.picture_as_pdf),
-                                        label: Text(
-                                          _isExporting
-                                              ? 'Memproses...'
-                                              : 'Export ke PDF',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.fade,
-                                          softWrap: false,
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFDC2626),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                    if (canPdf)
+                                      SizedBox(
+                                        width: buttonWidth,
+                                        height: 48,
+                                        child: ElevatedButton.icon(
+                                          onPressed: _isExporting
+                                              ? null
+                                              : () => _exportReport(
+                                                  forcedFormat: 'pdf'),
+                                          icon: _isExporting
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons.picture_as_pdf),
+                                          label: Text(
+                                            _isExporting
+                                                ? 'Memproses...'
+                                                : 'Export ke PDF',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.fade,
+                                            softWrap: false,
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFFDC2626),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(
-                                      width: buttonWidth,
-                                      height: 48,
-                                      child: ElevatedButton.icon(
-                                        onPressed: _isExporting
-                                            ? null
-                                            : () => _exportReport(
-                                                forcedFormat: 'excel'),
-                                        icon: _isExporting
-                                            ? const SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                            : const Icon(Icons.table_view),
-                                        label: Text(
-                                          _isExporting
-                                              ? 'Memproses...'
-                                              : 'Export ke Excel',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.fade,
-                                          softWrap: false,
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF10B981),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                    if (canExcel)
+                                      SizedBox(
+                                        width: buttonWidth,
+                                        height: 48,
+                                        child: ElevatedButton.icon(
+                                          onPressed: _isExporting
+                                              ? null
+                                              : () => _exportReport(
+                                                  forcedFormat: 'excel'),
+                                          icon: _isExporting
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.table_view),
+                                          label: Text(
+                                            _isExporting
+                                                ? 'Memproses...'
+                                                : 'Export ke Excel',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.fade,
+                                            softWrap: false,
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF10B981),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 );
                               },

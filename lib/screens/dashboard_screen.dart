@@ -229,6 +229,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // Kanban summary cards (below export action, above stat cards)
+                _buildSummaryKanban(
+                  title: 'Ringkasan Hari Ini',
+                  icon: Icons.today_rounded,
+                  accent: AppTheme.primaryColor,
+                  rows: [
+                    _SummaryRowData(
+                      icon: Icons.shopping_cart_outlined,
+                      label: 'Penjualan',
+                      amount: _safeDouble(data['daily_penjualan']),
+                      count: data['daily_penjualan_count'] ?? 0,
+                      color: AppTheme.primaryColor,
+                    ),
+                    _SummaryRowData(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Biaya',
+                      amount: _safeDouble(data['daily_biaya']),
+                      count: data['daily_biaya_count'] ?? 0,
+                      color: AppTheme.dangerColor,
+                    ),
+                    _SummaryRowData(
+                      icon: Icons.payments_outlined,
+                      label: 'Pembayaran',
+                      amount: _safeDouble(data['daily_pembayaran']),
+                      count: data['daily_pembayaran_count'] ?? 0,
+                      color: AppTheme.infoColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                _buildSummaryKanban(
+                  title: 'Ringkasan Bulan Ini',
+                  icon: Icons.calendar_month_rounded,
+                  accent: AppTheme.successColor,
+                  rows: [
+                    _SummaryRowData(
+                      icon: Icons.shopping_cart_outlined,
+                      label: 'Penjualan',
+                      amount: _safeDouble(data['total_penjualan_bulan_ini']),
+                      count: data['penjualan_count_bulan_ini'] ??
+                          data['penjualan_bulan_ini'] ??
+                          0,
+                      color: AppTheme.primaryColor,
+                    ),
+                    _SummaryRowData(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Biaya',
+                      amount: _safeDouble(data['biaya_bulan_ini']),
+                      count: data['biaya_count_bulan_ini'] ?? 0,
+                      color: AppTheme.dangerColor,
+                    ),
+                    _SummaryRowData(
+                      icon: Icons.payments_outlined,
+                      label: 'Pembayaran',
+                      amount: _safeDouble(data['total_pembayaran_bulan_ini']),
+                      count: data['pembayaran_bulan_ini'] ?? 0,
+                      color: AppTheme.infoColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 // Stat cards grid
                 _buildStatRow(
                   _StatCardData(
@@ -787,6 +850,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildSummaryKanban({
+    required String title,
+    required IconData icon,
+    required Color accent,
+    required List<_SummaryRowData> rows,
+  }) {
+    return GlassContainer(
+      borderRadius: 16,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: accent.withAlpha(AppTheme.isDark(context) ? 35 : 20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimaryColor(context),
+                  ),
+                ),
+              ),
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Rows
+          ...rows.asMap().entries.map((entry) {
+            final index = entry.key;
+            final row = entry.value;
+            return Column(
+              children: [
+                if (index > 0)
+                  Divider(
+                    height: 1,
+                    color: AppTheme.dividerColorOf(context),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: row.color
+                              .withAlpha(AppTheme.isDark(context) ? 30 : 15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(row.icon, size: 14, color: row.color),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              row.label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textSecondaryColor(context),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${row.count} transaksi',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textTertiaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        Formatters.currency(row.amount),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   void _showReportDialog(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1084,6 +1261,22 @@ class _PieData {
   final double value;
   final Color color;
   const _PieData(this.label, this.value, this.color);
+}
+
+class _SummaryRowData {
+  final IconData icon;
+  final String label;
+  final double amount;
+  final dynamic count;
+  final Color color;
+
+  const _SummaryRowData({
+    required this.icon,
+    required this.label,
+    required this.amount,
+    required this.count,
+    required this.color,
+  });
 }
 
 class _StatusBadge extends StatelessWidget {

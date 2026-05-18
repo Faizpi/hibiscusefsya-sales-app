@@ -13,6 +13,7 @@ class ExportOptionsModel {
   final List<ExportOptionItem> transactionTypes;
   final List<ExportOptionItem> statusFilters;
   final List<ExportOptionItem> exportFormats;
+  final List<String> allowedFormats;
   final List<ExportOptionItem> biayaJenisOptions;
   final List<ExportOptionItem> tujuanFilters;
   final List<ExportOptionItem> gudangOptions;
@@ -26,6 +27,7 @@ class ExportOptionsModel {
     required this.transactionTypes,
     required this.statusFilters,
     required this.exportFormats,
+    required this.allowedFormats,
     required this.biayaJenisOptions,
     required this.tujuanFilters,
     required this.gudangOptions,
@@ -57,13 +59,22 @@ class ExportOptionsModel {
       ],
     );
 
+    // allowed_formats can be at root level or inside permissions map
+    final permissions = root['permissions'] is Map<String, dynamic>
+        ? Map<String, dynamic>.from(root['permissions'] as Map)
+        : <String, dynamic>{};
+    final allowedFormats = _parseAllowedFormats(
+      root['allowed_formats'] ?? permissions['allowed_formats'],
+    );
     final exportFormats = _parseOptions(
       _pick(root, const ['export_formats', 'export_format_options']),
       fallback: const [
         ExportOptionItem(value: 'pdf', label: 'PDF'),
         ExportOptionItem(value: 'excel', label: 'Excel'),
       ],
-    );
+    )
+        .where((option) => allowedFormats.contains(option.value))
+        .toList();
 
     final biayaJenisOptions = _parseOptions(
       _pick(root, const ['biaya_jenis_options', 'biaya_types']),
@@ -113,10 +124,6 @@ class ExportOptionsModel {
       fallback: 'pdf',
     );
 
-    final permissions = root['permissions'] is Map<String, dynamic>
-        ? Map<String, dynamic>.from(root['permissions'] as Map)
-        : <String, dynamic>{};
-
     final canExportFullReport = (root['can_export_full_report'] == true) ||
         (permissions['can_export_full_report'] == true);
 
@@ -125,6 +132,7 @@ class ExportOptionsModel {
       transactionTypes: transactionTypes,
       statusFilters: statusFilters,
       exportFormats: exportFormats,
+      allowedFormats: allowedFormats,
       biayaJenisOptions: biayaJenisOptions,
       tujuanFilters: tujuanFilters,
       gudangOptions: gudangOptions,
@@ -213,6 +221,18 @@ class ExportOptionsModel {
     }
 
     return options.isNotEmpty ? options.first.value : fallback;
+  }
+
+  static List<String> _parseAllowedFormats(dynamic raw) {
+    const fallback = ['pdf', 'excel'];
+    if (raw is List && raw.isNotEmpty) {
+      final result = raw
+          .map((item) => item?.toString().trim().toLowerCase() ?? '')
+          .where((value) => value.isNotEmpty)
+          .toList();
+      if (result.isNotEmpty) return result;
+    }
+    return fallback;
   }
 
   static String _humanize(String raw) {

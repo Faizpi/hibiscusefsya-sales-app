@@ -1534,13 +1534,13 @@ class DetailPrintActionsHelper {
       digits = '62${digits.substring(3)}';
     }
     if (digits.startsWith('62')) {
-      return '+62 ${_groupPhoneDigits(digits.substring(2))}';
+      return '+62${_groupPhoneDigits(digits.substring(2))}';
     }
     if (digits.startsWith('0')) {
       return _groupPhoneDigits(digits);
     }
     if (digits.startsWith('8') && digits.length >= 9) {
-      return '+62 ${_groupPhoneDigits(digits)}';
+      return '+62${_groupPhoneDigits(digits)}';
     }
     if (raw.startsWith('+')) {
       return '+${_groupPhoneDigits(digits)}';
@@ -1549,6 +1549,10 @@ class DetailPrintActionsHelper {
   }
 
   static String _groupPhoneDigits(String digits) {
+    // Format: 3-4-4 (e.g. 851-9555-0202)
+    if (digits.length >= 10) {
+      return '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
+    }
     final groups = <String>[];
     for (var i = 0; i < digits.length; i += 4) {
       final end = (i + 4 < digits.length) ? i + 4 : digits.length;

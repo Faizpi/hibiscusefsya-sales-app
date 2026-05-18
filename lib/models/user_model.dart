@@ -112,7 +112,7 @@ class UserModel {
     'admin': {
       'can_view_dashboard': true,
       'can_view_charts': true,
-      'can_export_report': true,
+      'can_export_report': false,
       'can_switch_gudang': true,
       'can_view_stock': true,
       'can_export_stock': true,
